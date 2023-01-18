@@ -1,0 +1,40 @@
+{
+  "name": "@dialectik/compiler",
+  "version": "0.0.1",
+  "description": "Dialectik compiler",
+  "main": "build/index.js",
+  "types": "build/src/main.d.ts",
+  "files": [
+    "/build"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "dialectik": "build/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rimraf ./build && mkdirp ./build && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dialectik-org/compiler.git"
+  },
+  "keywords": [
+    "dialectik"
+  ],
+  "author": "Edukera",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dialectik-org/compiler/issues"
+  },
+  "homepage": "https://github.com/dialectik-org/compiler#readme",
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "mkdirp": "^2.1.3",
+    "rimraf": "^4.1.1",
+    "shx": "^0.3.4",
+    "typescript": "^4.9.4"
+  }
+}
