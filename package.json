@@ -11,7 +11,8 @@
     "access": "public"
   },
   "bin": {
-    "dialectik": "build/index.js"
+    "@dialectik/compiler": "build/main.js",
+    "dialectik": "build/main.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
