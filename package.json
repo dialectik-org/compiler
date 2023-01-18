@@ -1,6 +1,6 @@
 {
   "name": "@dialectik/compiler",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Dialectik compiler",
   "main": "build/index.js",
   "types": "build/src/main.d.ts",
