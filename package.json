@@ -1,6 +1,6 @@
 {
   "name": "@dialectik/compiler",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Dialectik compiler",
   "main": "build/index.js",
   "types": "build/src/main.d.ts",
@@ -16,7 +16,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf ./build && mkdirp ./build && tsc"
+    "build": "rimraf ./build && mkdirp ./build && shx cp -r ./src/templates/ ./build/templates && mkdirp ./build && tsc"
   },
   "repository": {
     "type": "git",
