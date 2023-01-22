@@ -1,4 +1,5 @@
 #!/usr/bin/env node
 import { compile } from "./process";
+import { default_options } from "./utils";
 
-compile({ mddir : "md" })
+compile(default_options)

@@ -1,34 +1,30 @@
-import { find } from './find'
 import { tmpdir } from 'os';
 import { copyFileSync, mkdirSync, existsSync } from 'fs';
-import { replace, target } from './utils';
+import { find, file, replace, options, makeBundleId } from './utils';
+import { join } from 'path';
+import { exec_webpack } from './webpack';
 
-export interface options {
-  mddir : string // directory to search for Markdown directories
-}
-
-export function compile(o : options) {
+export async function compile(o : options) {
   const currentDir = process.cwd();
   console.log(currentDir);
-  const mddir = currentDir + '/' + o.mddir
-  const files = find(mddir, 'md')
+  const mddir = join(currentDir, o.mddir)
+  const files = find(mddir, o.extension)
   console.log(files)
   console.log(tmpdir())
   console.log(__dirname)
-  const basic = __dirname + "/templates/basic.tsx"
-  const tmpdialectik = tmpdir() + '/dialectik'
-  if (!existsSync(tmpdialectik)) {
-    mkdirSync(tmpdir() + '/dialectik')
+  const template_basic = join(__dirname, o.templatesdir, o.basic)
+  const tmpwd = join(tmpdir(), o.wd)
+  if (!existsSync(tmpwd)) {
+    mkdirSync(tmpwd)
   }
-  const targets : target[] = files.map(file => {
-    const main = tmpdialectik + '/' + (file.dir == '' ? '' : (file.dir.replace('/','_') + '_')) + file.name + '_basic.tsx'
-    copyFileSync(basic, main)
-    replace(main, '<MD_SOURCE_PATH>', mddir + (file.dir == '' ? '/' : (file.dir + '/')) + file.name + '.md')
-    return {
-      main : main,
-      index : __dirname + '/templates/index.html',
-      file : file
-    }
+  const targets : Array<[string, file]> = files.map(file => {
+    const main = join(tmpwd, makeBundleId(file, o.basic))
+    copyFileSync(template_basic, main)
+    replace(main, o.mdsrcpath, mddir + (file.dir == '' ? '/' : (file.dir + '/')) + file.name + '.md')
+    return [main, file]
   })
   console.log(targets)
+  const index = __dirname + '/templates/index.html'
+  console.log(index)
+  await exec_webpack(targets.map(p => { return p[0] }), index)
 }

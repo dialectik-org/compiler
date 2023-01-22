@@ -37,5 +37,13 @@
     "rimraf": "^4.1.1",
     "shx": "^0.3.4",
     "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "html-webpack-plugin": "^5.5.0",
+    "rehype-katex": "^6.0.2",
+    "remark-gfm": "^3.0.1",
+    "remark-math": "^5.1.1",
+    "remark-mdx": "^2.2.1",
+    "webpack": "^5.75.0"
   }
 }
