@@ -50,7 +50,7 @@ function internal_find(root: string, dir : string, ext : string) : file[] {
         acc = acc.concat(internal_find(root, dir + sep + entry.name, ext))
       }
       return acc
-    }, <file[]>[])
+    }, [] as file[])
   } else {
     console.log(`Directory '${dir}' not found.`)
     return []

@@ -1,9 +1,9 @@
 {
   "name": "@dialectik/compiler",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Dialectik compiler",
-  "main": "build/index.js",
-  "types": "build/src/main.d.ts",
+  "type": "module",
+  "main": "build/main.mjs",
   "files": [
     "/build"
   ],
@@ -11,8 +11,8 @@
     "access": "public"
   },
   "bin": {
-    "@dialectik/compiler": "build/main.js",
-    "dialectik": "build/main.js"
+    "@dialectik/compiler": "build/main.mjs",
+    "dialectik": "build/main.mjs"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

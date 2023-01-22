@@ -1,10 +1,14 @@
+import { file, find, makeBundleId, options, replace } from './utils.mjs';
+import { exec_webpack } from './webpack.mjs';
+import { copyFileSync, existsSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
-import { copyFileSync, mkdirSync, existsSync } from 'fs';
-import { find, file, replace, options, makeBundleId } from './utils';
-import { join } from 'path';
-import { exec_webpack } from './webpack';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
-export async function compile(o : options) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export function compile(o : options) {
   const currentDir = process.cwd();
   console.log(currentDir);
   const mddir = join(currentDir, o.mddir)
@@ -26,5 +30,5 @@ export async function compile(o : options) {
   console.log(targets)
   const index = __dirname + '/templates/index.html'
   console.log(index)
-  await exec_webpack(targets.map(p => { return p[0] }), index)
+  exec_webpack(targets.map(p => { return p[0] }), index)
 }

@@ -1,14 +1,15 @@
-import { webpack, Configuration, DefinePlugin } from 'webpack'
+import webpack from 'webpack';
+import { Configuration } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import { resolve } from 'path'
-import { getEntries } from './utils'
+import { getEntries } from './utils.mjs'
 
-async function getConfiguration(targets : string[], index : string) : Promise<Configuration> {
-  const remarkMdx = await import('remark-mdx')
-  const remarkGfm = await import('remark-gfm')
-  const remarkMath = await import('remark-math')
-  const rehypeKatex = await import('rehype-katex')
+import remarkMdx from 'remark-mdx'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 
+function getConfiguration(targets : string[], index : string) : Configuration {
   return {
     entry  : getEntries(targets),
     output: {
@@ -61,14 +62,13 @@ async function getConfiguration(targets : string[], index : string) : Promise<Co
       new HtmlWebpackPlugin({
           template: index,
       }),
-      new DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
+      new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
     ]
   }
 }
 
-export async function exec_webpack(targets : string[], index : string) {
-  console.log(await getEntries(targets))
-  /*
+export function exec_webpack(targets : string[], index : string) {
+  console.log(getEntries(targets))
   const config = getConfiguration(targets, index)
   const compiler = webpack(config)
   compiler.run((err, stats) => {
@@ -95,5 +95,4 @@ export async function exec_webpack(targets : string[], index : string) {
       // ...
     });
   });
-  */
 }
