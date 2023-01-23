@@ -1,6 +1,7 @@
 import webpack from 'webpack';
 import { Configuration } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin'
+import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import { resolve } from 'path'
 import { target } from './utils.mjs'
 import { join } from 'path';
@@ -25,7 +26,7 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
       filename: '[name].js',
       path: join(dirname, 'build', target.bundleid),
     },
-    mode : "development",
+    mode : "production",
     resolve : {
       extensions: ['.tsx', '...'],
       modules: [resolve(dirname, "src"), "node_modules"],
@@ -69,9 +70,12 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
     },
     plugins : [
       new HtmlWebpackPlugin({
+          title: "My Web App",
           template: indexhtml,
+          inject: 'body'
       }),
-      new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
+      new HtmlInlineScriptPlugin()
+      //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
     ]
   }
 }
