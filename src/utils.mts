@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
-import { extname, sep, basename } from 'path'
+import { extname, sep } from 'path'
 
 /**
  * Compilation process options
@@ -12,6 +12,7 @@ export interface options {
   index        : string // html index file name in templates directory
   mdsrcpath    : string // place holder to set path to md source path
   wd           : string // temporary working directory
+  verbose      : boolean // verbose log mode
 }
 
 export const default_options : options = {
@@ -21,7 +22,8 @@ export const default_options : options = {
   basic        : 'basic.tsx',
   index        : 'index.html',
   mdsrcpath    : '<MD_SOURCE_PATH>',
-  wd           : 'src/tmp'
+  wd           : 'src/tmp',
+  verbose      : false
 }
 
 export interface file {
@@ -96,4 +98,9 @@ export function makeBundleId(file : file) : string {
     prefix = prefix.replace(sep, '_') + '_'
   }
   return prefix + file.name
+}
+
+export function log(o : options, ...msgs : any[])  {
+  if (o.verbose)
+    console.log(msgs)
 }

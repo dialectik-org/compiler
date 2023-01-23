@@ -77,7 +77,6 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
 }
 
 export function exec_webpack(target : target, index : string, dirname : string) {
-  console.log(getEntry(target))
   const config = getConfiguration(target, index, dirname)
   const compiler = webpack(config)
   compiler.run((err, stats) => {
