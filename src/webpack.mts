@@ -2,24 +2,33 @@ import webpack from 'webpack';
 import { Configuration } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import { resolve } from 'path'
-import { getEntries } from './utils.mjs'
+import { target } from './utils.mjs'
+import { join } from 'path';
+
 
 import remarkMdx from 'remark-mdx'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import { unlinkSync } from 'fs';
 
-function getConfiguration(targets : string[], index : string) : Configuration {
+export function getEntry(target : target) : { [index: string]: string } {
+  const res : { [index: string]: string } = {}
+  res[ target.bundleid ] = target.maintsx
+  return res
+}
+
+function getConfiguration(target : target, indexhtml : string, dirname : string) : Configuration {
   return {
-    entry  : getEntries(targets),
+    entry  : getEntry(target),
     output: {
       filename: '[name].js',
-      path: __dirname + '/dist',
+      path: join(dirname, 'build', target.bundleid),
     },
     mode : "development",
     resolve : {
       extensions: ['.tsx', '...'],
-      modules: [resolve(__dirname, "src"), "node_modules"],
+      modules: [resolve(dirname, "src"), "node_modules"],
     },
     //devServer: { static: path.join(__dirname, "src") },
     module : {
@@ -60,16 +69,16 @@ function getConfiguration(targets : string[], index : string) : Configuration {
     },
     plugins : [
       new HtmlWebpackPlugin({
-          template: index,
+          template: indexhtml,
       }),
       new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
     ]
   }
 }
 
-export function exec_webpack(targets : string[], index : string) {
-  console.log(getEntries(targets))
-  const config = getConfiguration(targets, index)
+export function exec_webpack(target : target, index : string, dirname : string) {
+  console.log(getEntry(target))
+  const config = getConfiguration(target, index, dirname)
   const compiler = webpack(config)
   compiler.run((err, stats) => {
     if (err) {
@@ -92,7 +101,8 @@ export function exec_webpack(targets : string[], index : string) {
       );
     }
     compiler.close((closeErr) => {
-      // ...
+      // remove index file
+      unlinkSync(target.maintsx)
     });
   });
 }

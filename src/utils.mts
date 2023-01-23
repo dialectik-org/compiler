@@ -21,12 +21,17 @@ export const default_options : options = {
   basic        : 'basic.tsx',
   index        : 'index.html',
   mdsrcpath    : '<MD_SOURCE_PATH>',
-  wd           : 'dialectiktmpwd',
+  wd           : 'src/tmp'
 }
 
 export interface file {
   dir: string,
   name: string
+}
+
+export interface target {
+  bundleid : string
+  maintsx : string,
 }
 
 function isExtension(name : string, ext : string) {
@@ -74,14 +79,14 @@ export function replace(file : string, match : string, by : string) {
 }
 
 /**
- * Creates ts index file idnetifier:
+ * Makes bundle identifier:
  * For example:
- * makeBundleId({ dir: '/project', name : 'file1' }, 'basic.tsx') = project_file1_basic.tsx
+ * makeBundleId({ dir: '/project', name : 'file1' }) = project_file1
  * @param file returned by `find`
  * @param template ts index filename
- * @returns ts index file idnetifier
+ * @returns Bundle identifier
  */
-export function makeBundleId(file : file, template : string) : string {
+export function makeBundleId(file : file) : string {
   let prefix = ''
   if (file.dir != '') {
     prefix = file.dir
@@ -90,24 +95,5 @@ export function makeBundleId(file : file, template : string) : string {
     }
     prefix = prefix.replace(sep, '_') + '_'
   }
-  return prefix + file.name + '_' + template
-}
-
-/**
- * Creates the webpack `entries` object; for example:
- * getEntries([ '/tmp/dialiectik/file1.tsx', '/tmp/dialiectik/file1.tsx' ]) = {
- *   file1 : '/tmp/dialiectik/file1.tsx',
- *   file2 : '/tmp/dialiectik/file1.tsx'
- * }
- * @param targets list of ts index (full path)
- * @returns webpack `entries` object
- */
-export function getEntries(targets : string[]) : { [index: string]: string } {
-  const res : { [index: string]: string } = {}
-  targets.forEach(target => {
-    const filename = basename(target)
-    const bundleid = filename.split('.')[0]
-    res[ bundleid ] = target
-  })
-  return res
+  return prefix + file.name
 }
