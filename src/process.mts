@@ -11,7 +11,7 @@ const __dirname = dirname(__filename);
 export function compile(o : options) {
   const currentDir = process.cwd();
   const tmpwd = join(currentDir, o.wd)
-  const indexhtml = join(currentDir, 'src', 'index.html')
+  const indexhtml = join(__dirname, o.templatesdir, o.index)
   log(o, 'Dirname', __dirname)
   log(o, 'Current directory:', currentDir)
   log(o, 'Temp working dir:', tmpwd)

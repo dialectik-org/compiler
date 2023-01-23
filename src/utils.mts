@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
-import { extname, sep } from 'path'
+import { extname, join, sep } from 'path'
 
 /**
  * Compilation process options
@@ -16,13 +16,13 @@ export interface options {
 }
 
 export const default_options : options = {
-  mddir        : 'md',
+  mddir        : join('src', 'md'),
   extension    : 'md',
   templatesdir : 'templates',
   basic        : 'basic.tsx',
   index        : 'index.html',
   mdsrcpath    : '<MD_SOURCE_PATH>',
-  wd           : 'src/tmp',
+  wd           : join('src', 'tmp'),
   verbose      : false
 }
 
