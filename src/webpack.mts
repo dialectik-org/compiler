@@ -4,8 +4,6 @@ import HtmlWebpackPlugin from 'html-webpack-plugin'
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import { resolve } from 'path'
 import { log, logError, target, options } from './utils.mjs'
-import { join } from 'path';
-
 
 import remarkMdx from 'remark-mdx'
 import remarkGfm from 'remark-gfm'
@@ -13,7 +11,6 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import remarkFrontmatter from 'remark-frontmatter';
 import { unlinkSync } from 'fs';
-import { SingleBar } from 'cli-progress';
 
 export function getEntry(target : target) : { [index: string]: string } {
   const res : { [index: string]: string } = {}

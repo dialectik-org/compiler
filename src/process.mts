@@ -1,9 +1,9 @@
-import { find, getFullPath, getMdOptions, log, makeBundleId, options, replace, target, isOlderThan } from './utils.mjs';
-import { exec_webpack } from './webpack.mjs';
-import { copyFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { find, getFullPath, getMdOptions, log, makeBundleId, options, replace, target, isOlderThan } from './utils.mjs'
+import { exec_webpack } from './webpack.mjs'
+import { copyFileSync, existsSync, mkdirSync } from 'fs'
+import { join } from 'path'
 import rimraf from 'rimraf'
-import { getMatter } from './matter.mjs';
+import { getMatter } from './matter.mjs'
 import { Presets, MultiBar } from 'cli-progress';
 
 export async function compile(o : options) {
