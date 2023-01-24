@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
+import { SingleBar } from "cli-progress";
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "fs";
 import { dirname, extname, join, sep } from 'path'
 import { fileURLToPath } from 'url';
 
@@ -45,20 +46,27 @@ export function getMdOptions(matter : { [index:string] : string }) : mdoptions {
   return {
     title : matter.title ?? "Dialectik MD",
     mode : matter.mode != 'dev' && matter.mode != 'prod' ? 'prod' : matter.mode,
-    inline : (matter.inline as unknown as boolean),
+    inline : matter.inline != undefined ? (matter.inline as unknown as boolean) : true,
     bundle : matter.bundle
   }
 }
 
 export interface file {
   dir: string,
-  name: string
+  name: string,
+  mdate : Date
 }
 
+/**
+ * Compilation target
+ */
 export interface target {
-  bundleid : string
-  maintsx : string,
-  mdoptions : mdoptions
+  bundleid  : string,      // bundle id
+  resdir    : string,      // result directory for compiled files
+  maintsx   : string,      // full path to temporary main.tsx
+  mdoptions : mdoptions,   // MD options extracted from md file
+  src       : file         // source file
+  bar       : SingleBar    // progress bar
 }
 
 function isExtension(name : string, ext : string) {
@@ -70,13 +78,15 @@ function trimExtension(name : string) {
 }
 
 function internal_find(root: string, dir : string, ext : string) : file[] {
-  const full_dir = root + '/' + dir
+  const full_dir = join(root, dir)
   if (existsSync(full_dir)) {
     return readdirSync(full_dir, { withFileTypes : true }).reduce((acc, entry) => {
       if (entry.isFile() && isExtension(entry.name, ext)) {
+        const stats = statSync(join(full_dir, entry.name))
         acc.push({
           dir: dir,
-          name: trimExtension(entry.name)
+          name: trimExtension(entry.name),
+          mdate: stats.mtime
         })
       } else if (entry.isDirectory()) {
         acc = acc.concat(internal_find(root, dir + sep + entry.name, ext))
@@ -86,6 +96,15 @@ function internal_find(root: string, dir : string, ext : string) : file[] {
   } else {
     console.log(`Directory '${dir}' not found.`)
     return []
+  }
+}
+
+export function isOlderThan(f : string, d : Date) : boolean {
+  if (!existsSync(f)) {
+    return true
+  } else {
+    const stats = statSync(f)
+    return (stats.ctime < d)
   }
 }
 
@@ -139,4 +158,9 @@ export function makeBundleId(file : file) : string {
 export function log(o : options, ...msgs : any[])  {
   if (o.verbose)
     console.log(msgs)
+}
+
+export function logError(o : options, ...msgs : any[])  {
+  if (o.verbose)
+    console.error(msgs)
 }

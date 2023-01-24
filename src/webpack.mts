@@ -3,7 +3,7 @@ import { Configuration } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import { resolve } from 'path'
-import { target } from './utils.mjs'
+import { log, logError, target, options } from './utils.mjs'
 import { join } from 'path';
 
 
@@ -13,6 +13,7 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import remarkFrontmatter from 'remark-frontmatter';
 import { unlinkSync } from 'fs';
+import { SingleBar } from 'cli-progress';
 
 export function getEntry(target : target) : { [index: string]: string } {
   const res : { [index: string]: string } = {}
@@ -80,23 +81,24 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
   }
 }
 
-export function exec_webpack(target : target, index : string, dirname : string) {
+export function exec_webpack(target : target, index : string, dirname : string, o : options) {
   const config = getConfiguration(target, index, dirname)
   const compiler = webpack(config)
   compiler.run((err, stats) => {
     if (err) {
-      console.error(err.stack || err)
+      logError(o, err.stack || err)
       return;
     }
+    target.bar.increment(1)
     if (stats != undefined) {
       const info = stats.toJson()
       if (stats.hasErrors()) {
-        console.error(info.errors)
+        logError({ ...o, verbose : true }, info.errors)
       }
       if (stats.hasWarnings()) {
-        console.warn(info.warnings)
+        log({ ...o, verbose : true }, info.warnings)
       }
-      console.log(
+      log(o,
         stats.toString({
           chunks: false, // Makes the build much quieter
           colors: true, // Shows colors in the console
@@ -105,6 +107,7 @@ export function exec_webpack(target : target, index : string, dirname : string) 
     }
     compiler.close((closeErr) => {
       // remove index file
+      target.bar.stop()
       unlinkSync(target.maintsx)
     });
   });
