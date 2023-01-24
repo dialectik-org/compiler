@@ -9,8 +9,7 @@ import { Presets, MultiBar } from 'cli-progress';
 export async function compile(o : options) {
   const tmpwd = join(o.currentwd, o.wd)
   const indexhtml = join(o.localdir, o.templatesdir, o.index)
-  log(o, 'Dirname', o.localdir)
-  log(o, 'Current directory:', o.currentwd)
+  log(o, 'Options', o)
   log(o, 'Temp working dir:', tmpwd)
   log(o, 'Index html', indexhtml)
   const mddir = join(o.currentwd, o.mddir)

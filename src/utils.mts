@@ -19,6 +19,31 @@ export interface options {
   verbose      : boolean // verbose log mode
 }
 
+export interface file {
+  dir   : string, // relative path to dir from 'currentDir'
+  name  : string, // file name (without extension)
+  mdate : Date    // last modification time
+}
+
+export type mdoptions = {
+  title   : string          // title tag value
+  mode    : "dev" | "prod"  // compilation mode
+  inline  : boolean         // single file compilation
+  bundle ?: string          // bundle id
+}
+
+/**
+ * Compilation target
+ */
+export interface target {
+  bundleid  : string,      // bundle id
+  resdir    : string,      // result directory for compiled files
+  maintsx   : string,      // full path to temporary main.tsx
+  mdoptions : mdoptions,   // MD options extracted from md file
+  src       : file         // source file
+  bar       : SingleBar    // progress bar
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -35,13 +60,6 @@ export const default_options : options = {
   verbose      : false
 }
 
-export type mdoptions = {
-  title   : string          // title tag value
-  mode    : "dev" | "prod"  // compilation mode
-  inline  : boolean         // single file compilation
-  bundle ?: string          // bundle id
-}
-
 export function getMdOptions(matter : { [index:string] : string }) : mdoptions {
   return {
     title : matter.title ?? "Dialectik MD",
@@ -49,24 +67,6 @@ export function getMdOptions(matter : { [index:string] : string }) : mdoptions {
     inline : matter.inline != undefined ? (matter.inline as unknown as boolean) : true,
     bundle : matter.bundle
   }
-}
-
-export interface file {
-  dir: string,
-  name: string,
-  mdate : Date
-}
-
-/**
- * Compilation target
- */
-export interface target {
-  bundleid  : string,      // bundle id
-  resdir    : string,      // result directory for compiled files
-  maintsx   : string,      // full path to temporary main.tsx
-  mdoptions : mdoptions,   // MD options extracted from md file
-  src       : file         // source file
-  bar       : SingleBar    // progress bar
 }
 
 function isExtension(name : string, ext : string) {

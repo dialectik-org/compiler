@@ -26,7 +26,7 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
     entry  : getEntry(target),
     output: {
       filename: '[name].js',
-      path: join(dirname, 'build', target.bundleid),
+      path: target.resdir,
     },
     mode : "production",
     resolve : {
