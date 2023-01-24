@@ -1,21 +1,29 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
-import { extname, join, sep } from 'path'
+import { dirname, extname, join, sep } from 'path'
+import { fileURLToPath } from 'url';
 
 /**
  * Compilation process options
  */
 export interface options {
-  mddir        : string // relative directory path to search for Markdown files
-  extension    : string // extension to compile
-  templatesdir : string // templates directory
-  basic        : string // basic template file name
-  index        : string // html index file name in templates directory
-  mdsrcpath    : string // place holder to set path to md source path
-  wd           : string // temporary working directory
+  currentwd    : string  // current working directory
+  localdir     : string  // this package directory (to search for templates)
+  mddir        : string  // relative directory path to search for Markdown files
+  extension    : string  // extension to compile
+  templatesdir : string  // templates directory
+  basic        : string  // basic template file name
+  index        : string  // html index file name in templates directory
+  mdsrcpath    : string  // place holder to set path to md source path
+  wd           : string  // temporary working directory
   verbose      : boolean // verbose log mode
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 export const default_options : options = {
+  currentwd    : process.cwd(),
+  localdir     : __dirname,
   mddir        : join('src', 'md'),
   extension    : 'md',
   templatesdir : 'templates',
@@ -26,6 +34,22 @@ export const default_options : options = {
   verbose      : false
 }
 
+export type mdoptions = {
+  title   : string          // title tag value
+  mode    : "dev" | "prod"  // compilation mode
+  inline  : boolean         // single file compilation
+  bundle ?: string          // bundle id
+}
+
+export function getMdOptions(matter : { [index:string] : string }) : mdoptions {
+  return {
+    title : matter.title ?? "Dialectik MD",
+    mode : matter.mode != 'dev' && matter.mode != 'prod' ? 'prod' : matter.mode,
+    inline : (matter.inline as unknown as boolean),
+    bundle : matter.bundle
+  }
+}
+
 export interface file {
   dir: string,
   name: string
@@ -34,6 +58,7 @@ export interface file {
 export interface target {
   bundleid : string
   maintsx : string,
+  mdoptions : mdoptions
 }
 
 function isExtension(name : string, ext : string) {
@@ -66,6 +91,17 @@ function internal_find(root: string, dir : string, ext : string) : file[] {
 
 export function find(dir : string, ext: string) : file[] {
   return internal_find(dir, '', ext)
+}
+
+/**
+ *
+ * @param d MD direction
+ * @param f file
+ * @param o options
+ * @returns full MD path
+ */
+export function getFullPath(d : string, f : file, o : options) : string {
+  return d + (f.dir == '' ? '/' : (f.dir + '/')) + f.name + '.' + o.extension
 }
 
 /**

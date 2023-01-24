@@ -11,6 +11,7 @@ import remarkMdx from 'remark-mdx'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import remarkFrontmatter from 'remark-frontmatter';
 import { unlinkSync } from 'fs';
 
 export function getEntry(target : target) : { [index: string]: string } {
@@ -60,7 +61,7 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
                   loader: '@mdx-js/loader',
                   /** @type {import('@mdx-js/loader').Options} */
                   options: {
-                      remarkPlugins : [remarkMdx, remarkGfm, remarkMath],
+                      remarkPlugins : [remarkMdx, remarkFrontmatter, remarkGfm, remarkMath],
                       rehypePlugins : [rehypeKatex]
                   }
                 }
@@ -70,13 +71,12 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
     },
     plugins : [
       new HtmlWebpackPlugin({
-          title: "My Web App",
+          title: target.mdoptions.title,
           template: indexhtml,
-          inject: 'body'
+          inject: target.mdoptions.inline ? 'body' : 'head'
       }),
-      new HtmlInlineScriptPlugin()
       //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
-    ]
+    ].concat(target.mdoptions.inline ? [(new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin] : [])
   }
 }
 
