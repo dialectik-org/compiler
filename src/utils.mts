@@ -1,7 +1,8 @@
-import { SingleBar } from "cli-progress";
+import { MultiBar, SingleBar } from "cli-progress";
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "fs";
 import { dirname, extname, join, sep } from 'path'
 import { fileURLToPath } from 'url';
+import { getMatter } from './matter.mjs'
 
 /**
  * Compilation process options
@@ -15,6 +16,7 @@ export interface options {
   basic        : string  // basic template file name
   index        : string  // html index file name in templates directory
   mdsrcpath    : string  // place holder to set path to md source path
+  cssimport    : string  // place holder to insert ccs import statement
   wd           : string  // temporary working directory
   verbose      : boolean // verbose log mode
 }
@@ -25,23 +27,150 @@ export interface file {
   mdate : Date    // last modification time
 }
 
+export class file {
+  /**
+   * file dependencies
+   */
+  public dependencies : file[]
+  /**
+   * Last modification date
+   */
+  public mdate : Date
+  public name : string
+  public extension : string
+  /**
+   * file constructor
+   * @param root full path to root directory
+   * @param dir relative path to dir from root
+   * @param name file name (without extension)
+   * @param extension file extension
+   */
+  constructor(
+    public root      : string,
+    public dir       : string,
+    entry     : string) {
+      const dotidx = entry.lastIndexOf('.')
+      this.name = entry.substring(0, dotidx);
+      this.extension = entry.substring(dotidx + 1, entry.length)
+      const stats = statSync(this.getPath())
+      this.mdate = stats.mtime
+      this.dependencies = []
+    }
+
+    public getDir() : string {
+      return this.root + (this.dir == '' ? '/' : (this.dir + '/'))
+    }
+
+    public getPath() : string {
+      return this.getDir() + this.name + '.' + this.extension
+    }
+
+    public addDep(f : file) {
+      this.dependencies.push(f)
+    }
+
+    public isMoreRecentThan(d : Date) : boolean {
+      return this.mdate > d || this.dependencies.some(x => x.isMoreRecentThan(d))
+    }
+}
+
+export class mdfile extends file {
+  public options : mdoptions
+
+  constructor(
+    root      : string,
+    dir       : string,
+    name      : string) {
+      super(root, dir, name)
+      this.options = { title : '', mode : 'dev', inline : false }
+  }
+
+  public getBundleId() : string {
+    if (this.options.bundle != undefined) {
+      return this.options.bundle
+    }
+    let prefix = ''
+    if (this.dir != '') {
+      prefix = this.dir
+      if (prefix.charAt(0) == sep) {
+        prefix = prefix.slice(1)
+      }
+      prefix = prefix.replace(sep, '_') + '_'
+    }
+    return prefix + this.name
+  }
+
+  async processOptions() {
+    const matter = await getMatter(this.getPath())
+    this.options.title = matter.title ?? "Dialectik MD",
+    this.options.mode = matter.mode != 'dev' && matter.mode != 'prod' ? 'prod' : matter.mode,
+    this.options.inline = matter.inline != undefined ? (matter.inline as unknown as boolean) : true,
+    this.options.css = matter.css,
+    this.options.bundle = matter.bundle
+    if (this.options.css != undefined) {
+      const css = new file(this.getDir(), '', this.options.css)
+      this.addDep(css)
+    }
+  }
+}
+
 export type mdoptions = {
   title   : string          // title tag value
   mode    : "dev" | "prod"  // compilation mode
   inline  : boolean         // single file compilation
+  css    ?: string          // relative path to css file
   bundle ?: string          // bundle id
 }
 
 /**
  * Compilation target
  */
-export interface target {
-  bundleid  : string,      // bundle id
-  resdir    : string,      // result directory for compiled files
-  maintsx   : string,      // full path to temporary main.tsx
-  mdoptions : mdoptions,   // MD options extracted from md file
-  src       : file         // source file
-  bar       : SingleBar    // progress bar
+export class target {
+
+  public title   : string
+  public mode    : "dev" | "prod"
+  public inline  : boolean
+  public bar    ?: SingleBar
+  public srcs    : mdfile[]
+
+  constructor(
+    public bundleid  : string, // bundle id
+    public targetdir : string, // directory for compiled files
+    public maintsx   : string, // full path to temporary main.tsx
+    src : mdfile
+  ) {
+    this.title = src.options.title
+    this.mode = src.options.mode
+    this.inline = src.options.inline
+    this.bar = undefined
+    this.srcs = [src]
+  }
+
+  public setBar(mb : MultiBar, total : number) {
+    this.bar = mb.create(total, 0, { filename : this.bundleid }, {
+      format: '{bar} | {percentage}% | ' + this.bundleid,
+      hideCursor: true
+    })
+  }
+
+  public addSrc(mdf : mdfile) {
+    const getmsg = (name : string) => `${name} setting from '${mdf.name}.md' is different from ${this.srcs.map(x => `'${x.name}.md'`).join(' ')}`
+    if (this.title != mdf.options.title) {
+      throw new Error(getmsg("'title'"))
+    }
+    if (this.mode != mdf.options.mode) {
+      throw new Error(getmsg("'mode'"))
+    }
+    if (this.inline != mdf.options.inline) {
+      throw new Error(getmsg("'inline'"))
+    }
+    this.srcs.push(mdf)
+  }
+
+  public isMoreRecentThan(d : Date) : boolean {
+    return this.srcs.some(src => src.isMoreRecentThan(d))
+  }
+
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -55,72 +184,38 @@ export const default_options : options = {
   templatesdir : 'templates',
   basic        : 'basic.tsx',
   index        : 'index.html',
-  mdsrcpath    : '<MD_SOURCE_PATH>',
+  mdsrcpath    : 'MD_SOURCE_PATH',
+  cssimport    : '// IMPORT_CSS',
   wd           : join('src', 'tmp'),
   verbose      : false
-}
-
-export function getMdOptions(matter : { [index:string] : string }) : mdoptions {
-  return {
-    title : matter.title ?? "Dialectik MD",
-    mode : matter.mode != 'dev' && matter.mode != 'prod' ? 'prod' : matter.mode,
-    inline : matter.inline != undefined ? (matter.inline as unknown as boolean) : true,
-    bundle : matter.bundle
-  }
 }
 
 function isExtension(name : string, ext : string) {
   return extname(name) == '.' + ext
 }
 
-function trimExtension(name : string) {
-  return name.substring(0, name.lastIndexOf('.'));
-}
-
-function internal_find(root: string, dir : string, ext : string) : file[] {
+async function internal_find(root: string, dir : string, ext : string) : Promise<mdfile[]> {
   const full_dir = join(root, dir)
   if (existsSync(full_dir)) {
-    return readdirSync(full_dir, { withFileTypes : true }).reduce((acc, entry) => {
+    return await readdirSync(full_dir, { withFileTypes : true }).reduce(async (acc, entry) => {
+      let a = await acc
       if (entry.isFile() && isExtension(entry.name, ext)) {
-        const stats = statSync(join(full_dir, entry.name))
-        acc.push({
-          dir: dir,
-          name: trimExtension(entry.name),
-          mdate: stats.mtime
-        })
+        const file = new mdfile(root, dir, entry.name)
+        await file.processOptions()
+        a.push(file)
       } else if (entry.isDirectory()) {
-        acc = acc.concat(internal_find(root, dir + sep + entry.name, ext))
+        a = a.concat(await internal_find(root, dir + sep + entry.name, ext))
       }
-      return acc
-    }, [] as file[])
+      return a
+    }, Promise.resolve([] as mdfile[]))
   } else {
     console.log(`Directory '${dir}' not found.`)
     return []
   }
 }
 
-export function isOlderThan(f : string, d : Date) : boolean {
-  if (!existsSync(f)) {
-    return true
-  } else {
-    const stats = statSync(f)
-    return (stats.ctime < d)
-  }
-}
-
-export function find(dir : string, ext: string) : file[] {
-  return internal_find(dir, '', ext)
-}
-
-/**
- *
- * @param d MD direction
- * @param f file
- * @param o options
- * @returns full MD path
- */
-export function getFullPath(d : string, f : file, o : options) : string {
-  return d + (f.dir == '' ? '/' : (f.dir + '/')) + f.name + '.' + o.extension
+export async function find(dir : string, ext: string) : Promise<mdfile[]> {
+  return await internal_find(dir, '', ext)
 }
 
 /**
@@ -135,26 +230,6 @@ export function replace(file : string, match : string, by : string) {
   writeFileSync(file, ncontent)
 }
 
-/**
- * Makes bundle identifier:
- * For example:
- * makeBundleId({ dir: '/project', name : 'file1' }) = project_file1
- * @param file returned by `find`
- * @param template ts index filename
- * @returns Bundle identifier
- */
-export function makeBundleId(file : file) : string {
-  let prefix = ''
-  if (file.dir != '') {
-    prefix = file.dir
-    if (prefix.charAt(0) == sep) {
-      prefix = prefix.slice(1)
-    }
-    prefix = prefix.replace(sep, '_') + '_'
-  }
-  return prefix + file.name
-}
-
 export function log(o : options, ...msgs : any[])  {
   if (o.verbose)
     console.log(msgs)
@@ -163,4 +238,8 @@ export function log(o : options, ...msgs : any[])  {
 export function logError(o : options, ...msgs : any[])  {
   if (o.verbose)
     console.error(msgs)
+}
+
+export function getCssImportStt(css : string) : string {
+  return `import '${css}'`
 }

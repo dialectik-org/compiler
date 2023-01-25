@@ -23,7 +23,7 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
     entry  : getEntry(target),
     output: {
       filename: '[name].js',
-      path: target.resdir,
+      path: target.targetdir,
     },
     mode : "production",
     resolve : {
@@ -69,12 +69,12 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
     },
     plugins : [
       new HtmlWebpackPlugin({
-          title: target.mdoptions.title,
+          title: target.title,
           template: indexhtml,
-          inject: target.mdoptions.inline ? 'body' : 'head'
+          inject: target.inline ? 'body' : 'head'
       }),
       //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
-    ].concat(target.mdoptions.inline ? [(new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin] : [])
+    ].concat(target.inline ? [(new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin] : [])
   }
 }
 
@@ -86,7 +86,7 @@ export function exec_webpack(target : target, index : string, dirname : string, 
       logError(o, err.stack || err)
       return;
     }
-    target.bar.increment(1)
+    target.bar?.increment()
     if (stats != undefined) {
       const info = stats.toJson()
       if (stats.hasErrors()) {
@@ -104,8 +104,8 @@ export function exec_webpack(target : target, index : string, dirname : string, 
     }
     compiler.close((closeErr) => {
       // remove index file
-      target.bar.stop()
-      unlinkSync(target.maintsx)
+      target.bar?.stop()
+      //unlinkSync(target.maintsx)
     });
   });
 }
