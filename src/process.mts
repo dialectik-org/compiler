@@ -60,6 +60,8 @@ export async function compile(o : options) {
     copyFileSync(template_basic, target.maintsx)
     if (target.srcs.length == 1) {
       replace(target.maintsx, o.mdsrcpath, target.srcs[0].getPath())
+      const prismcss = join(o.currentwd, o.prismpath, target.srcs[0].options.prismcss)
+      replace(target.maintsx, o.cssimport, getCssImportStt(prismcss))
       if (target.srcs[0].options.css != undefined) {
         const csspath = join(target.srcs[0].getDir(), target.srcs[0].options.css)
         replace(target.maintsx, o.cssimport, getCssImportStt(csspath))

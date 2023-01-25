@@ -10,6 +10,8 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import remarkFrontmatter from 'remark-frontmatter';
+import rehypePrism from '@mapbox/rehype-prism';
+
 import { unlinkSync } from 'fs';
 
 export function getEntry(target : target) : { [index: string]: string } {
@@ -60,7 +62,7 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
                   /** @type {import('@mdx-js/loader').Options} */
                   options: {
                       remarkPlugins : [remarkMdx, remarkFrontmatter, remarkGfm, remarkMath],
-                      rehypePlugins : [rehypeKatex]
+                      rehypePlugins : [rehypeKatex, rehypePrism]
                   }
                 }
               ]
@@ -105,7 +107,7 @@ export function exec_webpack(target : target, index : string, dirname : string, 
     compiler.close((closeErr) => {
       // remove index file
       target.bar?.stop()
-      //unlinkSync(target.maintsx)
+      unlinkSync(target.maintsx)
     });
   });
 }

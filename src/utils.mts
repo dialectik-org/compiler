@@ -17,6 +17,7 @@ export interface options {
   index        : string  // html index file name in templates directory
   mdsrcpath    : string  // place holder to set path to md source path
   cssimport    : string  // place holder to insert ccs import statement
+  prismpath    : string  // path to prism theme directory relative to cwd
   wd           : string  // temporary working directory
   verbose      : boolean // verbose log mode
 }
@@ -82,7 +83,7 @@ export class mdfile extends file {
     dir       : string,
     name      : string) {
       super(root, dir, name)
-      this.options = { title : '', mode : 'dev', inline : false }
+      this.options = { title : '', mode : 'dev', inline : false, prismcss : '' }
   }
 
   public getBundleId() : string {
@@ -105,6 +106,7 @@ export class mdfile extends file {
     this.options.title = matter.title ?? "Dialectik MD",
     this.options.mode = matter.mode != 'dev' && matter.mode != 'prod' ? 'prod' : matter.mode,
     this.options.inline = matter.inline != undefined ? (matter.inline as unknown as boolean) : true,
+    this.options.prismcss = matter.prismcss ?? "prism-one-light.css"
     this.options.css = matter.css,
     this.options.bundle = matter.bundle
     if (this.options.css != undefined) {
@@ -115,11 +117,12 @@ export class mdfile extends file {
 }
 
 export type mdoptions = {
-  title   : string          // title tag value
-  mode    : "dev" | "prod"  // compilation mode
-  inline  : boolean         // single file compilation
-  css    ?: string          // relative path to css file
-  bundle ?: string          // bundle id
+  title       : string          // title tag value
+  mode        : "dev" | "prod"  // compilation mode
+  inline      : boolean         // single file compilation
+  css        ?: string          // relative path to css file
+  prismcss    : string          // prism theme name
+  bundle     ?: string          // bundle id
 }
 
 /**
@@ -127,11 +130,12 @@ export type mdoptions = {
  */
 export class target {
 
-  public title   : string
-  public mode    : "dev" | "prod"
-  public inline  : boolean
-  public bar    ?: SingleBar
-  public srcs    : mdfile[]
+  public title    : string
+  public mode     : "dev" | "prod"
+  public inline   : boolean
+  public prismcss : string
+  public bar     ?: SingleBar
+  public srcs     : mdfile[]
 
   constructor(
     public bundleid  : string, // bundle id
@@ -142,6 +146,7 @@ export class target {
     this.title = src.options.title
     this.mode = src.options.mode
     this.inline = src.options.inline
+    this.prismcss = src.options.prismcss
     this.bar = undefined
     this.srcs = [src]
   }
@@ -186,6 +191,7 @@ export const default_options : options = {
   index        : 'index.html',
   mdsrcpath    : 'MD_SOURCE_PATH',
   cssimport    : '// IMPORT_CSS',
+  prismpath    : 'node_modules/prism-themes/themes',
   wd           : join('src', 'tmp'),
   verbose      : false
 }
@@ -224,7 +230,7 @@ export async function find(dir : string, ext: string) : Promise<mdfile[]> {
  * @param match string to be replaced
  * @param by replacing string
  */
-export function replace(file : string, match : string, by : string) {
+export function replace(file : string, match : string | RegExp, by : string) {
   const content = readFileSync(file, 'utf8')
   const ncontent = content.replace(match, by)
   writeFileSync(file, ncontent)
@@ -241,5 +247,5 @@ export function logError(o : options, ...msgs : any[])  {
 }
 
 export function getCssImportStt(css : string) : string {
-  return `import '${css}'`
+  return `import '${css}'\n// IMPORT_CSS`
 }
