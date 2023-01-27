@@ -12,6 +12,7 @@ import rehypeKatex from 'rehype-katex'
 import remarkFrontmatter from 'remark-frontmatter';
 import rehypePrism from '@mapbox/rehype-prism';
 import rehypeSlug from 'rehype-slug';
+import remarkEmbedImages from 'remark-embed-images'
 
 import { unlinkSync } from 'fs';
 
@@ -52,7 +53,14 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
           },
           {
               test: /\.(jpg|jpeg|png|gif|mp3|svg)$/,
-              use: ["file-loader"]
+              //type: 'asset/inline',
+              //type: 'asset/resource',
+              use: ["file-loader"],
+              //parser: {
+              //  dataUrlCondition: {
+              //    maxSize: 20 * 1024 // 20kb
+              //  }
+              //}
           },
           {
               test: /\.(md|mdx)?$/,
@@ -62,7 +70,7 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
                   loader: '@mdx-js/loader',
                   /** @type {import('@mdx-js/loader').Options} */
                   options: {
-                      remarkPlugins : [remarkFrontmatter,remarkMdx, remarkGfm, remarkMath],
+                      remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath],
                       rehypePlugins : [rehypeKatex, rehypePrism, rehypeSlug]
                   }
                 }
