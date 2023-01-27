@@ -8,7 +8,7 @@ import { getMatter } from './matter.mjs'
  * Compilation process options
  */
 export interface options {
-  currentwd    : string  // current working directory
+  current      : string  // current working directory
   localdir     : string  // this package directory (to search for templates)
   mddir        : string  // relative directory path to search for Markdown files
   extension    : string  // extension to compile
@@ -182,7 +182,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export const default_options : options = {
-  currentwd    : process.cwd(),
+  current    : process.cwd(),
   localdir     : __dirname,
   mddir        : join('src', 'md'),
   extension    : 'md',
@@ -243,7 +243,7 @@ export function log(o : options, ...msgs : any[])  {
 
 export function logError(o : options, ...msgs : any[])  {
   if (o.verbose)
-    console.error(msgs)
+    console.error(...msgs)
 }
 
 export function getCssImportStt(css : string) : string {

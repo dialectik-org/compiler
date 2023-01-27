@@ -11,6 +11,7 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import remarkFrontmatter from 'remark-frontmatter';
 import rehypePrism from '@mapbox/rehype-prism';
+import rehypeSlug from 'rehype-slug';
 
 import { unlinkSync } from 'fs';
 
@@ -61,8 +62,8 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
                   loader: '@mdx-js/loader',
                   /** @type {import('@mdx-js/loader').Options} */
                   options: {
-                      remarkPlugins : [remarkMdx, remarkFrontmatter, remarkGfm, remarkMath],
-                      rehypePlugins : [rehypeKatex, rehypePrism]
+                      remarkPlugins : [remarkFrontmatter,remarkMdx, remarkGfm, remarkMath],
+                      rehypePlugins : [rehypeKatex, rehypePrism, rehypeSlug]
                   }
                 }
               ]

@@ -5,13 +5,15 @@ import { join } from 'path'
 import rimraf from 'rimraf'
 import { Presets, MultiBar } from 'cli-progress';
 
+//const module = await import('path');
+
 export async function compile(o : options) {
-  const tmpwd = join(o.currentwd, o.wd)
+  const tmpwd = join(o.current, o.wd)
   const indexhtml = join(o.localdir, o.templatesdir, o.index)
   log(o, 'OPTIONS', o)
   log(o, 'Temp working dir:', tmpwd)
   log(o, 'Index html', indexhtml)
-  const mddir = join(o.currentwd, o.mddir)
+  const mddir = join(o.current, o.mddir)
   const files = await find(mddir, o.extension)
   log(o, 'FILES', files)
   const alltargets = files.reduce((acc, file) => {
@@ -21,7 +23,7 @@ export async function compile(o : options) {
     } else {
       acc[bundleid] = new target(
         bundleid,
-        join(o.currentwd, 'build', bundleid),
+        join(o.current, 'build', bundleid),
         join(tmpwd, bundleid + '_' + o.basic),
         file)
     }
@@ -60,7 +62,7 @@ export async function compile(o : options) {
     copyFileSync(template_basic, target.maintsx)
     if (target.srcs.length == 1) {
       replace(target.maintsx, o.mdsrcpath, target.srcs[0].getPath())
-      const prismcss = join(o.currentwd, o.prismpath, target.srcs[0].options.prismcss)
+      const prismcss = join(o.current, o.prismpath, target.srcs[0].options.prismcss)
       replace(target.maintsx, o.cssimport, getCssImportStt(prismcss))
       if (target.srcs[0].options.css != undefined) {
         const csspath = join(target.srcs[0].getDir(), target.srcs[0].options.css)
@@ -79,6 +81,6 @@ export async function compile(o : options) {
   })
   // compile each target
   targets.forEach(target => {
-    exec_webpack(target, indexhtml, o.currentwd, o)
+    exec_webpack(target, indexhtml, o.current, o)
   })
 }
