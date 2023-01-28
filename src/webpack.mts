@@ -15,6 +15,7 @@ import rehypeSlug from 'rehype-slug';
 import remarkEmbedImages from 'remark-embed-images'
 
 import { unlinkSync } from 'fs';
+import { runPuppeteer } from './puppeteer.mjs';
 
 export function getEntry(target : target) : { [index: string]: string } {
   const res : { [index: string]: string } = {}
@@ -89,31 +90,33 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
   }
 }
 
-export function exec_webpack(target : target, index : string, dirname : string, o : options) {
+export async function exec_webpack(target : target, index : string, dirname : string, o : options) {
   const config = getConfiguration(target, index, dirname)
   const compiler = webpack(config)
-  compiler.run((err, stats) => {
+  await compiler.run((err, stats) => {
     if (err) {
-      logError(o, err.stack || err)
+      logError(o.verbose, err.stack || err)
       return;
     }
     target.bar?.increment()
     if (stats != undefined) {
       const info = stats.toJson()
       if (stats.hasErrors()) {
-        logError({ ...o, verbose : true }, info.errors)
+        logError(true, info.errors)
       }
       if (stats.hasWarnings()) {
-        log({ ...o, verbose : true }, info.warnings)
+        log(true, info.warnings)
       }
-      log(o,
+      log(o.verbose,
         stats.toString({
           chunks: false, // Makes the build much quieter
           colors: true, // Shows colors in the console
         })
       );
     }
-    compiler.close((closeErr) => {
+    compiler.close(async (closeErr) => {
+      await runPuppeteer(['/'], target.targetdir)
+      target.bar?.increment()
       // remove index file
       target.bar?.stop()
       unlinkSync(target.maintsx)

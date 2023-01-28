@@ -1,5 +1,5 @@
 import { MultiBar, SingleBar } from "cli-progress";
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from "fs";
 import { dirname, extname, join, sep } from 'path'
 import { fileURLToPath } from 'url';
 import { getMatter } from './matter.mjs'
@@ -236,16 +236,41 @@ export function replace(file : string, match : string | RegExp, by : string) {
   writeFileSync(file, ncontent)
 }
 
-export function log(o : options, ...msgs : any[])  {
-  if (o.verbose)
+export function log(verbose : boolean, ...msgs : any[])  {
+  if (verbose)
     console.log(msgs)
 }
 
-export function logError(o : options, ...msgs : any[])  {
-  if (o.verbose)
+export function logError(verbose : boolean, ...msgs : any[])  {
+  if (verbose)
     console.error(...msgs)
 }
 
 export function getCssImportStt(css : string) : string {
   return `import '${css}'\n// IMPORT_CSS`
+}
+
+/**
+ *
+ * @param {string} dir
+ * @returns {Promise}
+ */
+export function ensureDirExists(dir : string) {
+  try {
+    return mkdirSync(dir, {recursive: true});
+  } catch (err) {
+    throw new Error(`Error: Failed to create directory for path ${dir}.\nMessage: ${err}`);
+  }
+}
+
+/**
+ * Set .html as default file extension if not exists
+ * @param {string} route
+ * @returns {string}
+ */
+export function getValidatedFileName(route : string) {
+  const fileName = route === '/' ? '/index' : route;
+  const withExtension = !!fileName.match(/(.htm$|.html$|.php$)/i);
+
+  return withExtension ? fileName : `${fileName}.html`;
 }

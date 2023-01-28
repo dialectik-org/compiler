@@ -10,12 +10,12 @@ import { Presets, MultiBar } from 'cli-progress';
 export async function compile(o : options) {
   const tmpwd = join(o.current, o.wd)
   const indexhtml = join(o.localdir, o.templatesdir, o.index)
-  log(o, 'OPTIONS', o)
-  log(o, 'Temp working dir:', tmpwd)
-  log(o, 'Index html', indexhtml)
+  log(o.verbose, 'OPTIONS', o)
+  log(o.verbose, 'Temp working dir:', tmpwd)
+  log(o.verbose, 'Index html', indexhtml)
   const mddir = join(o.current, o.mddir)
   const files = await find(mddir, o.extension)
-  log(o, 'FILES', files)
+  log(o.verbose, 'FILES', files)
   const alltargets = files.reduce((acc, file) => {
     const bundleid = file.getBundleId()
     if (acc[bundleid] != undefined) {
@@ -29,7 +29,7 @@ export async function compile(o : options) {
     }
     return acc
   }, {} as { [index:string] : target })
-  log(o, 'ALLTARGETS', alltargets)
+  log(o.verbose, 'ALLTARGETS', alltargets)
   const mb = new MultiBar({
     hideCursor      : true,
     stopOnComplete  : true,
@@ -37,18 +37,18 @@ export async function compile(o : options) {
   }, Presets.shades_classic)
   const targets = Object.values(alltargets).reduce((acc, target) => {
     if (!existsSync(target.targetdir)) {
-      target.setBar(mb, 2)
+      target.setBar(mb, 3)
       acc.push(target)
     } else {
       const stats = statSync(target.targetdir)
       if (target.isMoreRecentThan(stats.ctime)) {
-        target.setBar(mb, 2)
+        target.setBar(mb, 3)
         acc.push(target)
       }
     }
     return acc
   }, [] as target[])
-  log(o, 'TARGETS', targets)
+  log(o.verbose, 'TARGETS', targets)
   if (targets.length == 0) {
     console.warn('Nothing to compile.')
     mb.stop()
@@ -80,7 +80,7 @@ export async function compile(o : options) {
     }
   })
   // compile each target
-  targets.forEach(target => {
-    exec_webpack(target, indexhtml, o.current, o)
+  targets.forEach(async target => {
+    await exec_webpack(target, indexhtml, o.current, o)
   })
 }
