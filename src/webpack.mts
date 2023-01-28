@@ -90,7 +90,7 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
   }
 }
 
-export async function exec_webpack(target : target, index : string, dirname : string, o : options) {
+export async function exec_webpack(target : target, index : string, dirname : string, o : options, idx : number) {
   const config = getConfiguration(target, index, dirname)
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
@@ -115,7 +115,7 @@ export async function exec_webpack(target : target, index : string, dirname : st
       );
     }
     compiler.close(async (closeErr) => {
-      await runPuppeteer(['/'], target.targetdir)
+      await runPuppeteer(['/'], target.targetdir, idx)
       target.bar?.increment()
       // remove index file
       target.bar?.stop()

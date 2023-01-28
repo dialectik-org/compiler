@@ -80,7 +80,7 @@ export async function compile(o : options) {
     }
   })
   // compile each target
-  targets.forEach(async target => {
-    await exec_webpack(target, indexhtml, o.current, o)
+  targets.forEach(async (target, i) => {
+    await exec_webpack(target, indexhtml, o.current, o, i)
   })
 }

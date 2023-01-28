@@ -1,5 +1,6 @@
 import express from 'express'
 import { writeFileSync } from 'fs';
+import { IncomingMessage, Server, ServerResponse } from 'http';
 import { resolve } from 'path'
 import { launch, Browser, PuppeteerLaunchOptions } from 'puppeteer'
 import { ensureDirExists, getValidatedFileName, target } from './utils.mjs';
@@ -19,7 +20,7 @@ interface puppeteer_options {
 }
 
 const puppeteer_options : puppeteer_options = {
-  port: 3000,
+  port: 2023,
   engine: {
     launchOptions: {
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -39,7 +40,8 @@ const puppeteer_options : puppeteer_options = {
  * @param {string} dir
  * @returns {string|boolean}
  */
-async function runStaticServer(port : number, routes : string[], dir : string) {
+async function runStaticServer(port : number, routes : string[], dir : string, idx : number) : Promise<[Server<typeof IncomingMessage, typeof ServerResponse>, string]> {
+  const localport = port + idx
   try {
     const app = express();
     const resolvedPath = resolve(dir);
@@ -50,10 +52,10 @@ async function runStaticServer(port : number, routes : string[], dir : string) {
       })
     })
 
-    await app.listen(port);
-    return `http://localhost:${port}`;
+    const Server = await app.listen(localport);
+    return [Server, `http://localhost:${localport}`];
   } catch(err) {
-    throw new Error(`Error: Failed to run puppeteer server on port ${port}.\nMessage: ${err}`);
+    throw new Error(`Error: Failed to run puppeteer server on port ${localport}.\nMessage: ${err}`);
   }
 }
 
@@ -127,12 +129,12 @@ async function run(baseUrl : string, routes : string[], dir : string, engine : e
   return;
 }
 
-export async function runPuppeteer(routes : string[], builddir : string) {
+export async function runPuppeteer(routes : string[], builddir : string, idx : number) {
   const options = puppeteer_options
-  const staticServerURL = await runStaticServer(options.port, routes, builddir);
+  const [server, staticServerURL] = await runStaticServer(options.port, routes, builddir, idx);
 
   if (!staticServerURL) return 0;
 
   await run(staticServerURL, routes, builddir, options.engine);
-  process.exit();
+  server.close()
 }
