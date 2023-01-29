@@ -1,4 +1,4 @@
-import { find, log, options, replace, target, getCssImportStt } from './utils.mjs'
+import { find, log, options, replace, target, getCssImportStt, getCssLinkStt } from './utils.mjs'
 import { exec_webpack } from './webpack.mjs'
 import { copyFileSync, existsSync, statSync, mkdirSync } from 'fs'
 import { join } from 'path'
@@ -24,7 +24,7 @@ export async function compile(o : options) {
       acc[bundleid] = new target(
         bundleid,
         join(o.current, 'build', bundleid),
-        join(tmpwd, bundleid + '_' + o.basic),
+        join(tmpwd, bundleid),
         file)
     }
     return acc
@@ -54,19 +54,30 @@ export async function compile(o : options) {
     mb.stop()
     return
   }
-  const template_basic = join(o.localdir, o.templatesdir, o.basic)
+  const template_basic_tsx = join(o.localdir, o.templatesdir, o.basic)
+  const template_index_html = join(o.localdir, o.templatesdir, o.index)
   if (!existsSync(tmpwd)) {
     mkdirSync(tmpwd)
   }
   targets.forEach(target => {
-    copyFileSync(template_basic, target.maintsx)
+    if (!existsSync(join(tmpwd,target.bundleid))) {
+      mkdirSync(join(tmpwd,target.bundleid))
+    }
+    // copy main
+    copyFileSync(template_basic_tsx, target.getMain())
+    // copy index
+    copyFileSync(template_index_html, target.getIndex())
     if (target.srcs.length == 1) {
-      replace(target.maintsx, o.mdsrcpath, target.srcs[0].getPath())
-      const prismcss = join(o.current, o.prismpath, target.srcs[0].options.prismcss)
-      replace(target.maintsx, o.cssimport, getCssImportStt(prismcss))
-      if (target.srcs[0].options.css != undefined) {
-        const csspath = join(target.srcs[0].getDir(), target.srcs[0].options.css)
-        replace(target.maintsx, o.cssimport, getCssImportStt(csspath))
+      // import md source in main.tsx
+      const source = target.srcs[0]
+      replace(target.getMain(), o.mdsrcpath, source.getPath())
+      // import prism css in index.html
+      const prismcss = join(o.prismurl, source.options.prismcss)
+      replace(target.getIndex(), o.csslink, getCssLinkStt(prismcss, o))
+      // import css in main.tsx
+      if (source.options.css != undefined) {
+        const csspath = join(source.getDir(), source.options.css)
+        replace(target.getMain(), o.cssimport, getCssImportStt(csspath, o))
       }
       target.bar?.increment(1)
     } else {
@@ -81,6 +92,6 @@ export async function compile(o : options) {
   })
   // compile each target
   targets.forEach(async (target, i) => {
-    await exec_webpack(target, indexhtml, o.current, o, i)
+    await exec_webpack(target, o.current, o, i)
   })
 }

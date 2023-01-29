@@ -19,11 +19,11 @@ import { runPuppeteer } from './puppeteer.mjs';
 
 export function getEntry(target : target) : { [index: string]: string } {
   const res : { [index: string]: string } = {}
-  res[ target.bundleid ] = target.maintsx
+  res[ target.bundleid ] = target.getMain()
   return res
 }
 
-function getConfiguration(target : target, indexhtml : string, dirname : string) : Configuration {
+function getConfiguration(target : target, dirname : string) : Configuration {
   return {
     entry  : getEntry(target),
     output: {
@@ -82,7 +82,7 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
     plugins : [
       new HtmlWebpackPlugin({
           title: target.title,
-          template: indexhtml,
+          template: target.getIndex(),
           inject: target.inline ? 'body' : 'head'
       }),
       //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
@@ -90,8 +90,8 @@ function getConfiguration(target : target, indexhtml : string, dirname : string)
   }
 }
 
-export async function exec_webpack(target : target, index : string, dirname : string, o : options, idx : number) {
-  const config = getConfiguration(target, index, dirname)
+export async function exec_webpack(target : target, dirname : string, o : options, idx : number) {
+  const config = getConfiguration(target, dirname)
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
     if (err) {
@@ -119,7 +119,9 @@ export async function exec_webpack(target : target, index : string, dirname : st
       target.bar?.increment()
       // remove index file
       target.bar?.stop()
-      unlinkSync(target.maintsx)
+      unlinkSync(target.getMain())
+      unlinkSync(target.getIndex())
+      //unlinkSync(target.getTmpWd())
     });
   });
 }

@@ -17,7 +17,9 @@ export interface options {
   index        : string  // html index file name in templates directory
   mdsrcpath    : string  // place holder to set path to md source path
   cssimport    : string  // place holder to insert ccs import statement
+  csslink      : string  // plance holder to insert link declaration in index.html
   prismpath    : string  // path to prism theme directory relative to cwd
+  prismurl     : string  // url to prism themes repo
   wd           : string  // temporary working directory
   verbose      : boolean // verbose log mode
 }
@@ -121,6 +123,8 @@ export type mdoptions = {
   mode        : "dev" | "prod"  // compilation mode
   inline      : boolean         // single file compilation
   css        ?: string          // relative path to css file
+  index      ?: string          // relative path to index.html
+  maintsx    ?: string          // relative path to maintsx
   prismcss    : string          // prism theme name
   bundle     ?: string          // bundle id
 }
@@ -137,18 +141,36 @@ export class target {
   public bar     ?: SingleBar
   public srcs     : mdfile[]
 
+  public getIndex() : string {
+    let index = 'index.html'
+    if (this.srcs.length > 0) {
+      index = this.srcs[0].options.index ?? index
+    }
+    return join(this.tmpwd, index)
+  }
+
+  public getMain() : string {
+    let main = 'basic.tsx'
+    if (this.srcs.length > 0) {
+      main = this.srcs[0].options.maintsx ?? main
+    }
+    return join(this.tmpwd, main)
+  }
+
+  public getTmpWd() : string { return this.tmpwd }
+
   constructor(
     public bundleid  : string, // bundle id
     public targetdir : string, // directory for compiled files
-    public maintsx   : string, // full path to temporary main.tsx
+    public tmpwd     : string, // temporary working directory to copy index and main
     src : mdfile
   ) {
-    this.title = src.options.title
-    this.mode = src.options.mode
-    this.inline = src.options.inline
+    this.title    = src.options.title
+    this.mode     = src.options.mode
+    this.inline   = src.options.inline
     this.prismcss = src.options.prismcss
-    this.bar = undefined
-    this.srcs = [src]
+    this.bar      = undefined
+    this.srcs     = [src]
   }
 
   public setBar(mb : MultiBar, total : number) {
@@ -191,7 +213,9 @@ export const default_options : options = {
   index        : 'index.html',
   mdsrcpath    : 'MD_SOURCE_PATH',
   cssimport    : '// IMPORT_CSS',
+  csslink        : '<!-- LINKS -->',
   prismpath    : 'node_modules/prism-themes/themes',
+  prismurl     : 'https://cdn.jsdelivr.net/npm/prism-themes@1.9.0/themes',
   wd           : join('src', 'tmp'),
   verbose      : false
 }
@@ -204,7 +228,7 @@ async function internal_find(root: string, dir : string, ext : string) : Promise
   const full_dir = join(root, dir)
   if (existsSync(full_dir)) {
     return await readdirSync(full_dir, { withFileTypes : true }).reduce(async (acc, entry) => {
-      let a = await acc
+      let a : mdfile[] = await acc
       if (entry.isFile() && isExtension(entry.name, ext)) {
         const file = new mdfile(root, dir, entry.name)
         await file.processOptions()
@@ -246,8 +270,12 @@ export function logError(verbose : boolean, ...msgs : any[])  {
     console.error(...msgs)
 }
 
-export function getCssImportStt(css : string) : string {
-  return `import '${css}'\n// IMPORT_CSS`
+export function getCssImportStt(css : string, o : options) : string {
+  return `import '${css}'\n${o.cssimport}`
+}
+
+export function getCssLinkStt(csslink : string, o : options) : string {
+  return `<link rel="stylesheet" href="${csslink}" crossorigin="anonymous">\n${o.csslink}`
 }
 
 /**
