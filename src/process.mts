@@ -1,4 +1,4 @@
-import { find, log, options, replace, target, getCssImportStt, getCssLinkStt } from './utils.mjs'
+import { find, log, options, replace, target, getCssImportStt, getCssLinkStt, getRequired } from './utils.mjs'
 import { exec_webpack } from './webpack.mjs'
 import { copyFileSync, existsSync, statSync, mkdirSync } from 'fs'
 import { join } from 'path'
@@ -59,7 +59,7 @@ export async function compile(o : options) {
   if (!existsSync(tmpwd)) {
     mkdirSync(tmpwd)
   }
-  targets.forEach(target => {
+  targets.forEach(async target => {
     if (!existsSync(join(tmpwd,target.bundleid))) {
       mkdirSync(join(tmpwd,target.bundleid))
     }
@@ -71,9 +71,17 @@ export async function compile(o : options) {
       // import md source in main.tsx
       const source = target.srcs[0]
       replace(target.getMain(), o.mdsrcpath, source.getPath())
-      // import prism css in index.html
-      const prismcss = join(o.prismurl, source.options.prismcss)
-      replace(target.getIndex(), o.csslink, getCssLinkStt(prismcss, o))
+      const requirements = await getRequired(source)
+      if (requirements.katex) {
+        // import katex css in index.html
+        const katexcss = join(o.katexurl)
+        replace(target.getIndex(), o.csslink, getCssLinkStt(katexcss, o))
+      }
+      if (requirements.prism) {
+        // import prism css in index.html
+        const prismcss = join(o.prismurl, source.options.prismcss)
+        replace(target.getIndex(), o.csslink, getCssLinkStt(prismcss, o))
+      }
       // import css in main.tsx
       if (source.options.css != undefined) {
         const csspath = join(source.getDir(), source.options.css)

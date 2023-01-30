@@ -3,7 +3,13 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSy
 import { dirname, extname, join, sep } from 'path'
 import { fileURLToPath } from 'url';
 import { getMatter } from './matter.mjs'
-
+import {unified} from 'unified'
+import remarkParse from 'remark-parse'
+import remarkMdx from 'remark-mdx'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import remarkFrontmatter from 'remark-frontmatter';
+import {visit, EXIT} from 'unist-util-visit'
 /**
  * Compilation process options
  */
@@ -19,6 +25,7 @@ export interface options {
   cssimport    : string  // place holder to insert ccs import statement
   csslink      : string  // plance holder to insert link declaration in index.html
   prismpath    : string  // path to prism theme directory relative to cwd
+  katexurl     : string  // url to prism themes repo
   prismurl     : string  // url to prism themes repo
   wd           : string  // temporary working directory
   verbose      : boolean // verbose log mode
@@ -213,8 +220,9 @@ export const default_options : options = {
   index        : 'index.html',
   mdsrcpath    : 'MD_SOURCE_PATH',
   cssimport    : '// IMPORT_CSS',
-  csslink        : '<!-- LINKS -->',
+  csslink      : '<!-- LINKS -->',
   prismpath    : 'node_modules/prism-themes/themes',
+  katexurl     : 'https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/katex.min.css',
   prismurl     : 'https://cdn.jsdelivr.net/npm/prism-themes@1.9.0/themes',
   wd           : join('src', 'tmp'),
   verbose      : false
@@ -301,4 +309,28 @@ export function getValidatedFileName(route : string) {
   const withExtension = !!fileName.match(/(.htm$|.html$|.php$)/i);
 
   return withExtension ? fileName : `${fileName}.html`;
+}
+
+export interface requirements {
+  katex : boolean,
+  prism : boolean
+}
+
+export async function getRequired(file : mdfile) : Promise<requirements> {
+  let katex = false
+  let prism = false
+  const content = readFileSync(file.getPath())
+  const f = await unified()
+    .use(remarkParse)
+    .use(remarkMath)
+    .parse(content)
+  visit(f, 'code', () => {
+    prism = true
+    return EXIT
+  })
+  visit(f, 'inlineMath', () => {
+    katex = true
+    return EXIT
+  })
+  return { katex , prism }
 }
