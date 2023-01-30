@@ -86,7 +86,11 @@ function getConfiguration(target : target, dirname : string) : Configuration {
           inject: target.inline ? 'body' : 'head'
       }),
       //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
-    ].concat(target.inline ? [(new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin] : [])
+    ].concat(target.inline ? [(new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin] : []),
+    externals: {
+      "react": "React",
+      "react-dom": "ReactDOM",
+    },
   }
 }
 
@@ -115,7 +119,7 @@ export async function exec_webpack(target : target, dirname : string, o : option
       );
     }
     compiler.close(async (closeErr) => {
-      await runPuppeteer(['/'], target.targetdir, idx)
+      //await runPuppeteer(['/'], target.targetdir, idx)
       target.bar?.increment()
       // remove index file
       target.bar?.stop()
