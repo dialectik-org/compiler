@@ -1,9 +1,10 @@
 import { find, log, options, replace, target, getCssImportStt, getCssLinkStt, getRequired } from './utils.mjs'
 import { exec_webpack } from './webpack.mjs'
-import { copyFileSync, existsSync, statSync, mkdirSync } from 'fs'
-import { join } from 'path'
+import { copyFileSync, existsSync, statSync, mkdirSync, readdirSync } from 'fs'
+import { join, extname } from 'path'
 import rimraf from 'rimraf'
 import { Presets, MultiBar } from 'cli-progress';
+import refactor from 'refractor'
 
 //const module = await import('path');
 
@@ -53,6 +54,17 @@ export async function compile(o : options) {
     console.warn('Nothing to compile.')
     mb.stop()
     return
+  }
+  // load plugins
+  const prismplugindir = join(o.current,'src/plugins/prism')
+  if (existsSync(prismplugindir)) {
+    readdirSync(prismplugindir, { withFileTypes : true }).forEach(async entry => {
+      if (entry.isFile() && extname(entry.name) == '.mjs') {
+        import(join(prismplugindir, entry.name)).then(lang => {
+          refactor.register(lang.default)
+        })
+      }
+    })
   }
   const template_basic_tsx = join(o.localdir, o.templatesdir, o.basic)
   const template_index_html = join(o.localdir, o.templatesdir, o.index)
