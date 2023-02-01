@@ -10,11 +10,15 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import remarkFrontmatter from 'remark-frontmatter';
-import rehypePrism from '@mapbox/rehype-prism';
+//import rehypePrism from '@mapbox/rehype-prism';
+//import remarkPrism from 'remark-prism'
+import { remarkHighlighter } from './highlighter.mjs'
 import rehypeSlug from 'rehype-slug';
 import remarkEmbedImages from 'remark-embed-images'
 
 import { unlinkSync } from 'fs';
+//import refractor from 'refractor'
+
 import { runPuppeteer } from './puppeteer.mjs';
 
 export function getEntry(target : target) : { [index: string]: string } {
@@ -71,8 +75,8 @@ function getConfiguration(target : target, dirname : string) : Configuration {
                   loader: '@mdx-js/loader',
                   /** @type {import('@mdx-js/loader').Options} */
                   options: {
-                      remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath],
-                      rehypePlugins : [rehypeKatex, rehypePrism, rehypeSlug]
+                      remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkHighlighter ],
+                      rehypePlugins : [rehypeKatex, rehypeSlug]
                   }
                 }
               ]
@@ -90,6 +94,8 @@ function getConfiguration(target : target, dirname : string) : Configuration {
     externals: {
       "react": "React",
       "react-dom": "ReactDOM",
+      //"prismjs": "Prism",
+      //"prism-react-renderer": "Highlight"
     },
   }
 }
@@ -99,19 +105,19 @@ export async function exec_webpack(target : target, dirname : string, o : option
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
     if (err) {
-      logError(o.verbose, err.stack || err)
+      console.log(err.stack || err)
       return;
     }
     target.bar?.increment()
     if (stats != undefined) {
       const info = stats.toJson()
       if (stats.hasErrors()) {
-        logError(true, info.errors)
+        console.log(info.errors)
       }
       if (stats.hasWarnings()) {
-        log(true, info.warnings)
+        console.log(info.warnings)
       }
-      log(o.verbose,
+      log(false,
         stats.toString({
           chunks: false, // Makes the build much quieter
           colors: true, // Shows colors in the console

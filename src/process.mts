@@ -4,7 +4,7 @@ import { copyFileSync, existsSync, statSync, mkdirSync, readdirSync } from 'fs'
 import { join, extname } from 'path'
 import rimraf from 'rimraf'
 import { Presets, MultiBar } from 'cli-progress';
-import refactor from 'refractor'
+//import refactor from 'refractor'
 
 //const module = await import('path');
 
@@ -57,15 +57,17 @@ export async function compile(o : options) {
   }
   // load plugins
   const prismplugindir = join(o.current,'src/plugins/prism')
-  if (existsSync(prismplugindir)) {
-    readdirSync(prismplugindir, { withFileTypes : true }).forEach(async entry => {
-      if (entry.isFile() && extname(entry.name) == '.mjs') {
-        import(join(prismplugindir, entry.name)).then(lang => {
-          refactor.register(lang.default)
-        })
-      }
-    })
-  }
+  //if (existsSync(prismplugindir)) {
+  //  await readdirSync(prismplugindir, { withFileTypes : true }).forEach(async entry => {
+  //    if (entry.isFile() && extname(entry.name) == '.mjs') {
+  //      //console.log(join(prismplugindir, entry.name))
+  //      const grammar = join(prismplugindir, entry.name)
+  //      import(grammar).then(lang => {
+  //        refactor.register(lang.default)
+  //      })
+  //    }
+  //  })
+  //}
   const template_basic_tsx = join(o.localdir, o.templatesdir, o.basic)
   const template_index_html = join(o.localdir, o.templatesdir, o.index)
   if (!existsSync(tmpwd)) {
