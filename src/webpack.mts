@@ -8,18 +8,19 @@ import { log, logError, target, options } from './utils.mjs'
 import remarkMdx from 'remark-mdx'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
 import remarkFrontmatter from 'remark-frontmatter';
+import remarkEmbedImages from 'remark-embed-images'
 //import rehypePrism from '@mapbox/rehype-prism';
 //import remarkPrism from 'remark-prism'
-import { remarkHighlighter } from './highlighter.mjs'
+import { remarkCodeFrame } from './codeframe.mjs'
+import rehypeKatex from 'rehype-katex'
 import rehypeSlug from 'rehype-slug';
-import remarkEmbedImages from 'remark-embed-images'
+
+import rehypePrismPlus from 'rehype-prism-plus'
 
 import { unlinkSync } from 'fs';
-//import refractor from 'refractor'
 
-import { runPuppeteer } from './puppeteer.mjs';
+//import { runPuppeteer } from './puppeteer.mjs';
 
 export function getEntry(target : target) : { [index: string]: string } {
   const res : { [index: string]: string } = {}
@@ -75,8 +76,8 @@ function getConfiguration(target : target, dirname : string) : Configuration {
                   loader: '@mdx-js/loader',
                   /** @type {import('@mdx-js/loader').Options} */
                   options: {
-                      remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkHighlighter ],
-                      rehypePlugins : [rehypeKatex, rehypeSlug]
+                      remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame],
+                      rehypePlugins : [rehypeKatex, rehypeSlug, rehypePrismPlus]
                   }
                 }
               ]
@@ -94,8 +95,6 @@ function getConfiguration(target : target, dirname : string) : Configuration {
     externals: {
       "react": "React",
       "react-dom": "ReactDOM",
-      //"prismjs": "Prism",
-      //"prism-react-renderer": "Highlight"
     },
   }
 }
