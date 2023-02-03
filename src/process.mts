@@ -1,4 +1,4 @@
-import { find, log, options, replace, target, getCssImportStt, getCssLinkStt, getRequired } from './utils.mjs'
+import { find, log, options, replace, target, getCssImportStt, getCssLinkStt, getRequired, copyFiles } from './utils.mjs'
 import { exec_webpack } from './webpack.mjs'
 import { copyFileSync, existsSync, statSync, mkdirSync, readdirSync } from 'fs'
 import { join, extname } from 'path'
@@ -78,6 +78,8 @@ export async function compile(o : options) {
     copyFileSync(template_basic_tsx, target.getMain())
     // copy index
     copyFileSync(template_index_html, target.getIndex())
+    // copy css
+    copyFiles(join(o.localdir, o.templatesdir), target.getTmpWd(), 'css')
     if (target.srcs.length == 1) {
       // import md source in main.tsx
       const source = target.srcs[0]
@@ -92,6 +94,9 @@ export async function compile(o : options) {
         // import prism css in index.html
         const prismcss = join(o.prismurl, source.options.prismcss)
         replace(target.getIndex(), o.csslink, getCssLinkStt(prismcss, o))
+        // import prism plus in main.tsx
+        const prismpluscss = join(o.localdir, o.templatesdir, 'prismplus.css')
+        replace(target.getMain(), o.cssimport, getCssImportStt(prismpluscss, o))
       }
       // import css in main.tsx
       if (source.options.css != undefined) {

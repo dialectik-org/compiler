@@ -1,5 +1,5 @@
 import { MultiBar, SingleBar } from "cli-progress";
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync, copyFileSync } from "fs";
 import { dirname, extname, join, sep } from 'path'
 import { fileURLToPath } from 'url';
 import { getMatter } from './matter.mjs'
@@ -333,4 +333,20 @@ export async function getRequired(file : mdfile) : Promise<requirements> {
     return EXIT
   })
   return { katex , prism }
+}
+
+export function copyFiles(srcdir : string, targetdir : string, ext : string) {
+  if (existsSync(targetdir)) {
+    return readdirSync(srcdir, { withFileTypes : true }).forEach(entry => {
+      if (entry.isFile() && isExtension(entry.name, ext)) {
+        // copy file
+        //console.log('copy', join(srcdir, entry.name), join(targetdir, entry.name) )
+        copyFileSync(join(srcdir, entry.name), join(targetdir, entry.name))
+      }
+    })
+  }
+}
+
+export function rmFiles(targetdir : string, ext : string) {
+
 }

@@ -11,7 +11,7 @@ const mf : MapFunction<any> = (node : any) => {
   if (node.type == 'code') {
     const n = {
       type: 'mdxJsxFlowElement',
-      name: 'prismframe',
+      name: 'codeframe',
       attributes : [ /*{
         type: 'mdxJsxAttribute',
         name: 'lang',

@@ -109,27 +109,22 @@ export async function exec_webpack(target : target, dirname : string, o : option
     }
     target.bar?.increment()
     if (stats != undefined) {
-      const info = stats.toJson()
-      if (stats.hasErrors()) {
-        console.log(info.errors)
+      if (stats.hasErrors() || stats.hasWarnings()) {
+        console.log(
+          stats.toString({
+            chunks: false, // Makes the build much quieter
+            colors: true, // Shows colors in the console
+          })
+        );
       }
-      if (stats.hasWarnings()) {
-        console.log(info.warnings)
-      }
-      log(false,
-        stats.toString({
-          chunks: false, // Makes the build much quieter
-          colors: true, // Shows colors in the console
-        })
-      );
     }
     compiler.close(async (closeErr) => {
       //await runPuppeteer(['/'], target.targetdir, idx)
       target.bar?.increment()
       // remove index file
       target.bar?.stop()
-      unlinkSync(target.getMain())
-      unlinkSync(target.getIndex())
+      //unlinkSync(target.getMain())
+      //unlinkSync(target.getIndex())
       //unlinkSync(target.getTmpWd())
     });
   });
