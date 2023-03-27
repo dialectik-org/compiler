@@ -1,6 +1,7 @@
 import { CompilerOptions, ReactTemplateType, Task, TmpProject } from './types.mjs'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
+import { basename } from 'path'
 
 const get_react_template_type = (srcs : string[]) : ReactTemplateType => {
   if(srcs.length > 1) {
@@ -44,11 +45,22 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     } else {
       throw new Error(`Non default components '${coptions.reactComponents}' not supported yet (task '${task.id}')`)
     }
+    var styles : string[] = []
+    if (!task.externalStyle) {
+      task.styles.forEach(style => {
+        const style_path      = join(coptions.wDir, task.contentDirSuffix, style)
+        const style_path_dest = join(tmp_project_dir, basename(style))
+        styles.push(style_path_dest)
+        copyFileSync(style_path, style_path_dest)
+      })
+    } else {
+      styles = task.styles
+    }
     return {
       dir         : tmp_project_dir,            // path to tmp project
       main        : react_template_path_dest,   // path to main.tsx
       index       : index_html_path_dest,       // path in index.html
-      styles      : [],                         // list of styles
+      styles      : styles,                         // list of styles
       inlineCss   : task.inlineCss,
       inlineImage : task.inlineImage,
       inlineJs    : task.inlineJs,
