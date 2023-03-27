@@ -5,9 +5,9 @@
 //compile(default_options)
 
 import { execute_task } from "./refactor/task.mjs";
+import { CompilerOptions } from "./refactor/types.mjs";
 import { dirname } from 'path'
 import { fileURLToPath } from 'url';
-import { CompilerOptions } from "./refactor/types.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
