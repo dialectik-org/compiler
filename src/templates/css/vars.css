@@ -1,0 +1,12 @@
+:root {
+  --background-color: white;
+  --text-color: black;
+  --primay-color: #00ACE7;
+  --heading-anchor: ' #';
+  --external-link-anchor: ' ⬈';
+  --copy-button-right: 12px;
+  --copy-button-top: 12px;
+  --copy-button-border-color: #8080807a;
+  --copy-button-success-color: #00d600;
+  --copy-button-border-radius: 6px
+}

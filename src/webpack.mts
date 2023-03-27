@@ -1,24 +1,21 @@
-import webpack from 'webpack';
-import { Configuration } from 'webpack';
-import HtmlWebpackPlugin from 'html-webpack-plugin'
-import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
-import { resolve } from 'path'
-import { log, logError, target, options } from './utils.mjs'
-
-import remarkMdx from 'remark-mdx'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import remarkFrontmatter from 'remark-frontmatter';
-import remarkEmbedImages from 'remark-embed-images'
 //import rehypePrism from '@mapbox/rehype-prism';
 //import remarkPrism from 'remark-prism'
 import { remarkCodeFrame } from './codeframe.mjs'
-import rehypeKatex from 'rehype-katex'
-import rehypeSlug from 'rehype-slug';
-
-import rehypePrismPlus from 'rehype-prism-plus'
-
+import { log, logError, options, target } from './utils.mjs'
 import { unlinkSync } from 'fs';
+import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
+import HtmlWebpackPlugin from 'html-webpack-plugin'
+import { resolve } from 'path'
+import rehypeKatex from 'rehype-katex'
+import rehypePrismPlus from 'rehype-prism-plus'
+import rehypeSlug from 'rehype-slug';
+import remarkEmbedImages from 'remark-embed-images'
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import remarkMdx from 'remark-mdx'
+import webpack from 'webpack';
+import { Configuration } from 'webpack';
 
 //import { runPuppeteer } from './puppeteer.mjs';
 
