@@ -5,6 +5,11 @@ import copy from 'copy-text-to-clipboard';
 // @ts-ignore
 import React from 'react';
 
+import './css/vars.css'
+import './css/copy-button.css'
+import './css/link.css'
+import './css/prism-plus.css'
+
 interface CopyButtonProps {
   readonly code: string;
   readonly className?: string;
@@ -80,7 +85,7 @@ const Link = ({ children, href } : { children : any, href : any }) => {
 // Map HTML elements to React components
 export const getComponents = () => {
   return {
-    a: (props) => <Link children={props.children} href={props.href} />,
-    codeframe : (props) => <CodeFrame code={props.code} children={props.children}/>
+    a: (props : any) => <Link children={props.children} href={props.href} />,
+    codeframe : (props : any) => <CodeFrame code={props.code} children={props.children}/>
   }
 }

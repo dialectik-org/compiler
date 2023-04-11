@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "cli-progress": "^3.11.2",
+    "copy-webpack-plugin": "^11.0.0",
     "from": "^0.1.7",
     "html-inline-script-webpack-plugin": "^3.1.0",
     "html-webpack-plugin": "^5.5.0",
