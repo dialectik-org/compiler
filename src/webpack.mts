@@ -1,11 +1,11 @@
 //import rehypePrism from '@mapbox/rehype-prism';
 //import remarkPrism from 'remark-prism'
 import { remarkCodeFrame } from './codeframe.mjs'
-import { log, logError, options, target } from './utils.mjs'
-import { unlinkSync } from 'fs';
+import { CompilerOptions, ReactProjectData } from './types.mjs'
+import CopyWebpackPlugin from 'copy-webpack-plugin'
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
-import { resolve } from 'path'
+import { basename, join } from 'path'
 import rehypeKatex from 'rehype-katex'
 import rehypePrismPlus from 'rehype-prism-plus'
 import rehypeSlug from 'rehype-slug';
@@ -16,79 +16,107 @@ import remarkMath from 'remark-math'
 import remarkMdx from 'remark-mdx'
 import webpack from 'webpack';
 import { Configuration } from 'webpack';
+import { readFileSync } from 'fs';
 
-//import { runPuppeteer } from './puppeteer.mjs';
-
-export function getEntry(target : target) : { [index: string]: string } {
-  const res : { [index: string]: string } = {}
-  res[ target.bundleid ] = target.getMain()
-  return res
-}
-
-function getConfiguration(target : target, dirname : string) : Configuration {
+function getConfiguration(project : ReactProjectData, coptions : CompilerOptions) : Configuration {
   return {
-    entry  : getEntry(target),
+    entry  : project.main,
     output: {
       filename: '[name].js',
-      path: target.targetdir,
+      path: coptions.targetDir,
     },
     mode : "production",
     resolve : {
       extensions: ['.tsx', '...'],
-      modules: [resolve(dirname, "src"), "node_modules"],
+      modules: [project.dir, "node_modules"],
     },
     //devServer: { static: path.join(__dirname, "src") },
     module : {
       rules: [
-          {
-              test: /\.(js|jsx)$/,
-              exclude: /node_modules/,
-              use: ["babel-loader"]
-          },
-          {
-            test: /\.(ts|tsx)$/,
-            exclude: /node_modules/,
-            use: ["ts-loader"],
-          },
-          {
-              test: /\.(css|scss)$/,
-              use: ["style-loader", "css-loader"],
-          },
-          {
-              test: /\.(jpg|jpeg|png|gif|mp3|svg)$/,
-              //type: 'asset/inline',
-              //type: 'asset/resource',
-              use: ["file-loader"],
-              //parser: {
-              //  dataUrlCondition: {
-              //    maxSize: 20 * 1024 // 20kb
-              //  }
-              //}
-          },
-          {
-              test: /\.(md|mdx)?$/,
-              use: [
-                {loader: 'babel-loader', options: {}},
-                {
-                  loader: '@mdx-js/loader',
-                  /** @type {import('@mdx-js/loader').Options} */
-                  options: {
-                      remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame],
-                      rehypePlugins : [rehypeKatex, rehypeSlug, rehypePrismPlus]
-                  }
-                }
-              ]
-          }
+        {
+          test: /\.(js|jsx)$/,
+          exclude: /node_modules/,
+          use: ["babel-loader"]
+        },
+        {
+          test: /\.(ts|tsx)$/,
+          exclude: /node_modules/,
+          use: ["ts-loader"],
+        },
+        {
+          test: /\.(css|scss)$/,
+          use: ["style-loader", "css-loader"],
+        },
+        {
+          test: /\.(jpg|jpeg|png|gif|mp3|svg)$/,
+          //type: 'asset/inline',
+          //type: 'asset/resource',
+          use: ["file-loader"],
+          //parser: {
+          //  dataUrlCondition: {
+          //    maxSize: 20 * 1024 // 20kb
+          //  }
+          //}
+        },
+        {
+          test: /\.(md|mdx)?$/,
+          use: [
+            {loader: 'babel-loader', options: {}},
+            {
+              loader: '@mdx-js/loader',
+              /** @type {import('@mdx-js/loader').Options} */
+              options: {
+                remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame],
+                rehypePlugins : [rehypeKatex, rehypeSlug, rehypePrismPlus]
+              }
+            }
+          ]
+        }
       ],
     },
     plugins : [
       new HtmlWebpackPlugin({
-          title: target.title,
-          template: target.getIndex(),
-          inject: target.inline ? 'body' : 'head'
+        title: project.title,
+        template: project.index,
+        inject: project.inlineJs ? 'body' : 'head',
+        templateParameters: {
+          'hasStyle' : !project.inlineCss && project.styles.length > 0,
+          'hasKatex' : project.hasKatex,
+          'hasPrism' : project.hasPrism,
+          'katexCss' : coptions.katexCss,
+          'prismCss' : join(coptions.prismCss, project.prismStyle),
+          'customCss': basename(project.styles[0])
+        }
       }),
       //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
-    ].concat(target.inline ? [(new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin] : []),
+    ].concat(project.inlineJs ? [
+      (new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin
+    ] : [])
+    .concat(project.inlineCss && project.styles.length > 0 ? [
+      {
+        apply: (compiler : any) => {
+          compiler.hooks.compilation.tap('InjectExternalCss', (compilation : any) => {
+            HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync(
+              'InjectExternalCss',
+              (data, cb) => {
+                const cssFilePath = project.styles[0]; // Replace with the actual path to your CSS file
+                const cssContent = readFileSync(cssFilePath, 'utf-8');
+                const styleTag = `<style>${cssContent}</style>`;
+                data.html = data.html.replace('</body>', `${styleTag}</body>`);
+                cb(null, data);
+              }
+            );
+          });
+        },
+      } as unknown as HtmlWebpackPlugin
+    ] : [])
+    .concat(!project.inlineCss && project.styles.length > 0 ? [
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: project.styles[0], to: basename(project.styles[0]) },
+        ],
+      })
+    ] as unknown as HtmlWebpackPlugin : []),
     externals: {
       "react": "React",
       "react-dom": "ReactDOM",
@@ -96,15 +124,15 @@ function getConfiguration(target : target, dirname : string) : Configuration {
   }
 }
 
-export async function exec_webpack(target : target, dirname : string, o : options, idx : number) {
-  const config = getConfiguration(target, dirname)
+export async function exec_webpack(project : ReactProjectData, coptions : CompilerOptions) {
+  const config = getConfiguration(project, coptions)
+  //console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
     if (err) {
       console.log(err.stack || err)
       return;
     }
-    target.bar?.increment()
     if (stats != undefined) {
       if (stats.hasErrors() || stats.hasWarnings()) {
         console.log(
@@ -116,10 +144,7 @@ export async function exec_webpack(target : target, dirname : string, o : option
       }
     }
     compiler.close(async (closeErr) => {
-      //await runPuppeteer(['/'], target.targetdir, idx)
-      target.bar?.increment()
       // remove index file
-      target.bar?.stop()
       //unlinkSync(target.getMain())
       //unlinkSync(target.getIndex())
       //unlinkSync(target.getTmpWd())

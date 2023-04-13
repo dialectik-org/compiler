@@ -4,9 +4,9 @@
 //
 //compile(default_options)
 
-import { loadPlugins } from "./refactor/plugins.mjs";
-import { execute_task } from "./refactor/task.mjs";
-import { CompilerOptions } from "./refactor/types.mjs";
+import { loadPlugins } from "./plugins.mjs";
+import { execute_task } from "./task.mjs";
+import { CompilerOptions } from "./types.mjs";
 import { dirname } from 'path'
 import { fileURLToPath } from 'url';
 
