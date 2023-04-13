@@ -4,6 +4,7 @@
 //
 //compile(default_options)
 
+import { loadPlugins } from "./refactor/plugins.mjs";
 import { execute_task } from "./refactor/task.mjs";
 import { CompilerOptions } from "./refactor/types.mjs";
 import { dirname } from 'path'
@@ -13,6 +14,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const coptions = new CompilerOptions(process.cwd(), __dirname)
+
+loadPlugins(coptions)
 
 execute_task({
   id               : "Hello",
