@@ -2,10 +2,10 @@
 //import remarkPrism from 'remark-prism'
 import { remarkCodeFrame } from '../codeframe.mjs'
 import { CompilerOptions, ReactProjectData } from './types.mjs'
-import CopyPlugin from 'copy-webpack-plugin'
+import CopyWebpackPlugin from 'copy-webpack-plugin'
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
-import { join } from 'path'
+import { basename, join } from 'path'
 import rehypeKatex from 'rehype-katex'
 import rehypePrismPlus from 'rehype-prism-plus'
 import rehypeSlug from 'rehype-slug';
@@ -16,6 +16,7 @@ import remarkMath from 'remark-math'
 import remarkMdx from 'remark-mdx'
 import webpack from 'webpack';
 import { Configuration } from 'webpack';
+import { readFileSync } from 'fs';
 
 function getConfiguration(project : ReactProjectData, coptions : CompilerOptions) : Configuration {
   return {
@@ -77,18 +78,45 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
       new HtmlWebpackPlugin({
         title: project.title,
         template: project.index,
-        inject: 'head',
+        inject: project.inlineJs ? 'body' : 'head',
         templateParameters: {
+          'hasStyle' : !project.inlineCss && project.styles.length > 0,
           'hasKatex' : project.hasKatex,
           'hasPrism' : project.hasPrism,
           'katexCss' : coptions.katexCss,
-          'prismCss' : join(coptions.prismCss, project.prismStyle)
+          'prismCss' : join(coptions.prismCss, project.prismStyle),
+          'customCss': basename(project.styles[0])
         }
       }),
       //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
     ].concat(project.inlineJs ? [
       (new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin
-    ] : []),
+    ] : [])
+    .concat(project.inlineCss && project.styles.length > 0 ? [
+      {
+        apply: (compiler : any) => {
+          compiler.hooks.compilation.tap('InjectExternalCss', (compilation : any) => {
+            HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync(
+              'InjectExternalCss',
+              (data, cb) => {
+                const cssFilePath = project.styles[0]; // Replace with the actual path to your CSS file
+                const cssContent = readFileSync(cssFilePath, 'utf-8');
+                const styleTag = `<style>${cssContent}</style>`;
+                data.html = data.html.replace('</body>', `${styleTag}</body>`);
+                cb(null, data);
+              }
+            );
+          });
+        },
+      } as unknown as HtmlWebpackPlugin
+    ] : [])
+    .concat(!project.inlineCss && project.styles.length > 0 ? [
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: project.styles[0], to: basename(project.styles[0]) },
+        ],
+      })
+    ] as unknown as HtmlWebpackPlugin : []),
     externals: {
       "react": "React",
       "react-dom": "ReactDOM",

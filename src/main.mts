@@ -19,12 +19,12 @@ execute_task({
   contentDirSuffix : "",
   targetType       : 'HTML',
   sources          : ["src/md/hello.md"],
-  styles           : [],
+  styles           : ["src/md/style.css"],
   components       : 'Default',
   prismStyle       : undefined,
   externalStyle    : false,
   static           : false,
   inlineCss        : false,
   inlineImage      : false,
-  inlineJs         : false
+  inlineJs         : true
  }, coptions)
