@@ -5,10 +5,10 @@ import copy from 'copy-text-to-clipboard';
 // @ts-ignore
 import React from 'react';
 
-import './css/vars.css'
 import './css/copy-button.css'
 import './css/link.css'
 import './css/prism-plus.css'
+import './css/vars.css'
 
 interface CopyButtonProps {
   readonly code: string;

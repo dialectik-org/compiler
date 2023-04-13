@@ -5,7 +5,6 @@ import { CompilerOptions, ReactProjectData } from './types.mjs'
 import CopyPlugin from 'copy-webpack-plugin'
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
-import { resolve } from 'path'
 import { join } from 'path'
 import rehypeKatex from 'rehype-katex'
 import rehypePrismPlus from 'rehype-prism-plus'
@@ -89,8 +88,7 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
       //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
     ].concat(project.inlineJs ? [
       (new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin
-    ] : []
-    ),
+    ] : []),
     externals: {
       "react": "React",
       "react-dom": "ReactDOM",
