@@ -17,6 +17,9 @@ const coptions = new CompilerOptions(process.cwd(), __dirname)
 
 loadPlugins(coptions)
 
+console.log(__dirname)
+console.log(process.argv)
+
 execute_task({
   id               : "Hello",
   contentDirSuffix : "",
