@@ -19,12 +19,12 @@ import remarkMdx from 'remark-mdx'
 import webpack from 'webpack';
 import { Configuration } from 'webpack';
 
-function getConfiguration(project : ReactProjectData, coptions : CompilerOptions) : Configuration {
+function getConfiguration(id: string, project : ReactProjectData, coptions : CompilerOptions) : Configuration {
   return {
     entry  : project.main,
     output: {
       filename: '[name].js',
-      path: coptions.targetDir,
+      path: join(coptions.targetDir, id),
     },
     mode : "production",
     resolve : {
@@ -127,8 +127,8 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
   }
 }
 
-export async function exec_webpack(project : ReactProjectData, coptions : CompilerOptions) {
-  const config = getConfiguration(project, coptions)
+export async function exec_webpack(id : string, project : ReactProjectData, coptions : CompilerOptions) {
+  const config = getConfiguration(id, project, coptions)
   //console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
