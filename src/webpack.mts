@@ -2,7 +2,9 @@
 //import remarkPrism from 'remark-prism'
 import { remarkCodeFrame } from './codeframe.mjs'
 import { CompilerOptions, ReactProjectData } from './types.mjs'
+import CleanCSS from 'clean-css'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
+import { readFileSync } from 'fs';
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import { basename, join } from 'path'
@@ -16,7 +18,6 @@ import remarkMath from 'remark-math'
 import remarkMdx from 'remark-mdx'
 import webpack from 'webpack';
 import { Configuration } from 'webpack';
-import { readFileSync } from 'fs';
 
 function getConfiguration(project : ReactProjectData, coptions : CompilerOptions) : Configuration {
   return {
@@ -85,7 +86,7 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
           'hasPrism' : project.hasPrism,
           'katexCss' : coptions.katexCss,
           'prismCss' : join(coptions.prismCss, project.prismStyle),
-          'customCss': basename(project.styles[0])
+          'customCss': project.styles.length > 0 ? basename(project.styles[0]) : ''
         }
       }),
       //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
@@ -101,7 +102,9 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
               (data, cb) => {
                 const cssFilePath = project.styles[0]; // Replace with the actual path to your CSS file
                 const cssContent = readFileSync(cssFilePath, 'utf-8');
-                const styleTag = `<style>${cssContent}</style>`;
+                const cleanCSS = new CleanCSS();
+                const minifiedCSS = cleanCSS.minify(cssContent);
+                const styleTag = `<style>${minifiedCSS.styles}</style>`;
                 data.html = data.html.replace('</body>', `${styleTag}</body>`);
                 cb(null, data);
               }
