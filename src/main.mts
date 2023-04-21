@@ -1,5 +1,5 @@
 import { loadPlugins } from "./plugins.mjs";
-import { execute_task } from "./task.mjs";
+import { execute_task, start_server } from "./task.mjs";
 import { CompilerOptions, Task } from "./types.mjs";
 import { dirname } from 'path'
 import { fileURLToPath } from 'url';
@@ -14,4 +14,11 @@ export const compile = (t : Task, wd : string) => {
   console.log(JSON.stringify(coptions, null, 2))
   loadPlugins(coptions)
   execute_task(t, coptions)
+}
+
+export const start = (t : Task, wd : string) => {
+  const coptions = new CompilerOptions(wd, __dirname);
+  console.log(JSON.stringify(coptions, null, 2))
+  loadPlugins(coptions)
+  start_server(t, coptions)
 }

@@ -30,6 +30,7 @@ export interface ReactProjectData {
   inlineJs      : boolean,
   hasKatex      : boolean,
   hasPrism      : boolean,
+  copy          : Array<{ from : string, to : string  }>
 }
 
 export class CompilerOptions {

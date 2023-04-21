@@ -81,10 +81,12 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
   const index_html_path          = join(coptions.templateDir, coptions.htmlTemplate)
   const index_html_path_dest     = join(tmp_project_dir, coptions.htmlTemplate)
   mkOrCleanDir(tmp_project_dir)
+  const copy                     = []
   if (task.sources.length == 1) {
     const content              = task.sources[0]
     const content_path         = join(coptions.wDir, task.contentDirSuffix, content)
     const content_path_dest    = join(tmp_project_dir, 'content.md')
+    copy.push({ from : content_path, to : content_path_dest })
     copyFileSync(content_path, content_path_dest)
   } else {
     throw new Error(`Multi sources not supported (task '${task.id}')`)
@@ -103,12 +105,14 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     task.styles.forEach(style => {
       const style_path      = join(coptions.wDir, task.contentDirSuffix, style)
       const style_path_dest = join(tmp_project_dir, basename(style))
+      copy.push({ from : style_path, to : style_path_dest })
       styles.push(style_path_dest)
       copyFileSync(style_path, style_path_dest)
     })
   } else {
     styles = task.styles
   }
+  console.log(copy)
   return {
     title         : task.id,
     dir           : tmp_project_dir,            // path to tmp project
@@ -121,6 +125,7 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     inlineImage   : task.inlineImage,
     inlineJs      : task.inlineJs,
     hasKatex      : true,
-    hasPrism      : true
+    hasPrism      : true,
+    copy          : copy
   }
 }
