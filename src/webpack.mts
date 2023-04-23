@@ -65,6 +65,7 @@ function watchAndCopySourceFiles(fileMappings: FileMapping[]): void {
 
 function getConfiguration(project : ReactProjectData, coptions : CompilerOptions, isDev : boolean) : Configuration {
   return {
+    context: project.dir,
     entry  : project.main,
     output: {
       filename: '[name].js',
@@ -73,9 +74,6 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
     },
     mode : isDev ? "development" : "production",
     devServer: isDev ? {
-      static: {
-        directory: project.targetDir,
-      },
       onBeforeSetupMiddleware: function (devServer) {
         if (!devServer) {
           throw new Error('Webpack Dev Server is not defined!');
@@ -83,14 +81,16 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
         watchAndCopySourceFiles(project.copy);
       },
       host: 'localhost',
-      watchFiles: project.styles,
+      watchFiles: [`${project.dir}/*`],
       compress: true,
       port: 9000,
       open: true,
+      hot: true, // Add this line to enable HMR
+      liveReload: true, // Add this line to enable live reload as a fallback
     } : undefined,
     resolve : {
       extensions: ['.tsx', '...'],
-      modules: [project.dir, "node_modules"],
+      modules: [join(coptions.wDir, "node_modules"), "node_modules"],
     },
     optimization: {
       minimize: true,
@@ -110,25 +110,43 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
         {
           test: /\.(js|jsx)$/,
           exclude: /node_modules/,
-          use: ["babel-loader"]
+          use: {
+            loader : coptions.modules.babelLoader,
+            options: {
+              presets: [
+                '@babel/preset-env',
+                '@babel/preset-react',
+              ],
+              plugins: [
+                "@babel/plugin-proposal-class-properties"
+              ]
+              //plugins: isDev ? ['react-refresh/babel'] : [],
+            },
+          }
         },
         {
           test: /\.(ts|tsx)$/,
           exclude: /node_modules/,
-          include: [coptions.wDir], // Moved the include field to the rule object
           use: {
-            loader : "ts-loader",
+            loader : coptions.modules.tsLoader,
+            options: {
+              configFile: join(project.dir, 'tsconfig.json'),
+              // include other ts-loader options if necessary
+              compilerOptions: {
+                typeRoots: [coptions.modules.types],
+              },
+            },
           },
         },
         {
           test: /\.(css|scss)$/,
-          use: ["style-loader", "css-loader"],
+          use: [coptions.modules.styleLoader, coptions.modules.cssLoader],
         },
         {
           test: /\.(jpg|jpeg|png|gif|mp3|svg)$/,
           //type: 'asset/inline',
           //type: 'asset/resource',
-          use: ["file-loader"],
+          use: [coptions.modules.fileLoader],
           //parser: {
           //  dataUrlCondition: {
           //    maxSize: 20 * 1024 // 20kb
@@ -138,9 +156,21 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
         {
           test: /\.(md|mdx)?$/,
           use: [
-            {loader: 'babel-loader', options: {}},
             {
-              loader: '@mdx-js/loader',
+              loader: coptions.modules.babelLoader,
+              options: {
+                presets: [
+                  '@babel/preset-env',
+                  '@babel/preset-react',
+                ],
+                //plugins: isDev ? ['react-refresh/babel'] : [],
+                plugins: [
+                  "@babel/plugin-proposal-class-properties"
+                ]
+              },
+            },
+            {
+              loader: coptions.modules.mdxLoader,
               /** @type {import('@mdx-js/loader').Options} */
               options: {
                 remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame],

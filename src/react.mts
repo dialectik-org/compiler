@@ -1,5 +1,6 @@
 import { CompilerOptions, ReactProjectData, ReactTemplateType, Task } from './types.mjs'
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, rmSync, unlinkSync } from 'fs'
+import { tmpdir } from 'os';
 import { basename, dirname, extname, join } from 'path'
 
 function capitalize(input: string): string {
@@ -77,7 +78,7 @@ function mkOrCleanDir(path: string): void {
       }
     });
   } else { // create directory
-    mkdirSync(path);
+    mkdirSync(path, { recursive: true });
   }
 }
 
@@ -108,7 +109,7 @@ const getId = (task : Task) => {
  */
 export const create_react_project = (task : Task, coptions : CompilerOptions) : ReactProjectData => {
   const task_id                  = getId(task)
-  const tmp_project_dir          = join(coptions.tmpDir, task_id);
+  const tmp_project_dir          = task.tmpDir ? join(coptions.wDir, task.tmpDir, task_id) : join(tmpdir(), task_id);
   const react_template           = coptions.getReactTemplate(get_react_template_type(task.sources))
   const react_template_path      = join(coptions.templateDir, react_template)
   const react_template_path_dest = join(tmp_project_dir, react_template)
@@ -151,6 +152,7 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
   }
   // copy tsconfig
   copyFileSync(join(coptions.templateDir, 'tsconfig.json'), join(tmp_project_dir, 'tsconfig.json'))
+  copyFileSync(join(coptions.templateDir, 'react-app-env.d.ts'), join(tmp_project_dir, 'react-app-env.d.ts'))
   return {
     title         : task_id,
     dir           : tmp_project_dir,            // path to tmp project

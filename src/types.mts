@@ -7,6 +7,7 @@ export interface Task {
   contentDirSuffix : string | undefined,
   targetType       : 'HTML' | 'H5P',
   targetDir        : string | undefined,
+  tmpDir           : string | undefined,
   sources          : string[],  // paths relative to contentDirSuffix
   styles           : string[],  // paths relative to contentDirSuffix
   components       : string | undefined,
@@ -40,16 +41,23 @@ export interface ReactProjectData {
 
 export class CompilerOptions {
   wDir            : string
-  tmpDir          : string
   templateDir     : string
   htmlTemplate    : string
   reactComponents : string
   katexCss        : string
   prismCss        : string
+  modules         : {
+    babelLoader   : string,
+    tsLoader      : string,
+    styleLoader   : string,
+    cssLoader     : string,
+    mdxLoader     : string,
+    fileLoader    : string,
+    types         : string
+  }
   reactTemplates  : Array<[ReactTemplateType, string]>
   constructor(wd  : string, compilerdir : string) {
     this.wDir            = wd
-    this.tmpDir          = join(wd, 'src', 'tmp')
     this.templateDir     = join(compilerdir, 'templates')
     this.htmlTemplate    = 'index.html'
     this.reactComponents = 'components.tsx'
@@ -59,6 +67,15 @@ export class CompilerOptions {
       ['Single', 'single.tsx'],
       ['Multi',  'multi.tsx' ]
     ]
+    this.modules         = {
+      babelLoader        : join(wd, "node_modules", "babel-loader"),
+      tsLoader           : join(wd, "node_modules", "ts-loader"),
+      styleLoader        : join(wd, "node_modules", "style-loader"),
+      cssLoader          : join(wd, "node_modules", "css-loader"),
+      mdxLoader          : join(wd, "node_modules", "@mdx-js/loader"),
+      fileLoader         : join(wd, "node_modules", "file-loader"),
+      types              : join(wd, 'node_modules', '@types')
+    }
   }
   getReactTemplate(rtyp : ReactTemplateType) : string {
     for(var i=0; i<this.reactTemplates.length; i++) {
