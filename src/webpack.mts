@@ -2,9 +2,10 @@
 //import remarkPrism from 'remark-prism'
 import { remarkCodeFrame } from './codeframe.mjs'
 import { CompilerOptions, ReactProjectData } from './types.mjs'
+import { watch } from 'chokidar'
 import CleanCSS from 'clean-css'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
-import { readFileSync, copyFileSync } from 'fs';
+import { copyFileSync, readFileSync } from 'fs';
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import { basename, join } from 'path'
@@ -16,12 +17,10 @@ import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import remarkMdx from 'remark-mdx'
-import webpack from 'webpack';
-import webpackDevServer from 'webpack-dev-server'
-import { watch } from 'chokidar'
 import TerserPlugin from 'terser-webpack-plugin'
-
+import webpack from 'webpack';
 import { Configuration as WebpackConfiguration } from 'webpack';
+import webpackDevServer from 'webpack-dev-server'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
 
 interface Configuration extends WebpackConfiguration {
@@ -116,7 +115,10 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
         {
           test: /\.(ts|tsx)$/,
           exclude: /node_modules/,
-          use: ["ts-loader"],
+          include: [coptions.wDir], // Moved the include field to the rule object
+          use: {
+            loader : "ts-loader",
+          },
         },
         {
           test: /\.(css|scss)$/,

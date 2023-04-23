@@ -1,6 +1,6 @@
 import { CompilerOptions, ReactProjectData, ReactTemplateType, Task } from './types.mjs'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, lstatSync, rmSync, unlinkSync } from 'fs'
-import { join, basename, dirname, extname } from 'path'
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, rmSync, unlinkSync } from 'fs'
+import { basename, dirname, extname, join } from 'path'
 
 function capitalize(input: string): string {
   if (!input) return '';
@@ -149,7 +149,8 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
   } else {
     styles = task.styles
   }
-  console.log(copy)
+  // copy tsconfig
+  copyFileSync(join(coptions.templateDir, 'tsconfig.json'), join(tmp_project_dir, 'tsconfig.json'))
   return {
     title         : task_id,
     dir           : tmp_project_dir,            // path to tmp project
