@@ -112,16 +112,6 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
           exclude: /node_modules/,
           use: {
             loader : coptions.modules.babelLoader,
-            options: {
-              presets: [
-                '@babel/preset-env',
-                '@babel/preset-react',
-              ],
-              plugins: [
-                "@babel/plugin-proposal-class-properties"
-              ]
-              //plugins: isDev ? ['react-refresh/babel'] : [],
-            },
           }
         },
         {
@@ -158,16 +148,6 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
           use: [
             {
               loader: coptions.modules.babelLoader,
-              options: {
-                presets: [
-                  '@babel/preset-env',
-                  '@babel/preset-react',
-                ],
-                //plugins: isDev ? ['react-refresh/babel'] : [],
-                plugins: [
-                  "@babel/plugin-proposal-class-properties"
-                ]
-              },
             },
             {
               loader: coptions.modules.mdxLoader,
