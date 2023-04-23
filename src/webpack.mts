@@ -19,6 +19,7 @@ import remarkMdx from 'remark-mdx'
 import webpack from 'webpack';
 import webpackDevServer from 'webpack-dev-server'
 import { watch } from 'chokidar'
+import TerserPlugin from 'terser-webpack-plugin'
 
 import { Configuration as WebpackConfiguration } from 'webpack';
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
@@ -63,18 +64,18 @@ function watchAndCopySourceFiles(fileMappings: FileMapping[]): void {
   });
 }
 
-function getConfiguration(id: string, project : ReactProjectData, coptions : CompilerOptions, isDev : boolean) : Configuration {
+function getConfiguration(project : ReactProjectData, coptions : CompilerOptions, isDev : boolean) : Configuration {
   return {
     entry  : project.main,
     output: {
       filename: '[name].js',
-      path: join(coptions.targetDir, id),
+      path: project.targetDir,
       publicPath: '/',
     },
     mode : isDev ? "development" : "production",
     devServer: isDev ? {
       static: {
-        directory: join(coptions.targetDir, id),
+        directory: project.targetDir,
       },
       onBeforeSetupMiddleware: function (devServer) {
         if (!devServer) {
@@ -91,6 +92,19 @@ function getConfiguration(id: string, project : ReactProjectData, coptions : Com
     resolve : {
       extensions: ['.tsx', '...'],
       modules: [project.dir, "node_modules"],
+    },
+    optimization: {
+      minimize: true,
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            format: {
+              comments: project.license, // This line will remove the license-related comments
+            },
+          },
+          extractComments: project.license, // This line will prevent creating a separate file for license comments
+        }),
+      ],
     },
     module : {
       rules: [
@@ -137,6 +151,7 @@ function getConfiguration(id: string, project : ReactProjectData, coptions : Com
     },
     plugins : [
       new HtmlWebpackPlugin({
+        filename: project.targetName,
         title: project.title,
         template: project.index,
         inject: project.inlineJs ? 'body' : 'head',
@@ -187,8 +202,8 @@ function getConfiguration(id: string, project : ReactProjectData, coptions : Com
   }
 }
 
-export async function exec_webpack(id : string, project : ReactProjectData, coptions : CompilerOptions) {
-  const config = getConfiguration(id, project, coptions, false)
+export async function exec_webpack(project : ReactProjectData, coptions : CompilerOptions) {
+  const config = getConfiguration(project, coptions, false)
   //console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
@@ -215,8 +230,8 @@ export async function exec_webpack(id : string, project : ReactProjectData, copt
   });
 }
 
-export function start_webpack_dev(id : string, project : ReactProjectData, coptions : CompilerOptions) {
-  const config = getConfiguration(id, project, coptions, true)
+export function start_webpack_dev(project : ReactProjectData, coptions : CompilerOptions) {
+  const config = getConfiguration(project, coptions, true)
   console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config);
   if (config.devServer && config.devServer.port && config.devServer.host) {

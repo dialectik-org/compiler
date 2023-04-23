@@ -1,7 +1,25 @@
 import { CompilerOptions, ReactProjectData, ReactTemplateType, Task } from './types.mjs'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, lstatSync, rmSync, unlinkSync } from 'fs'
-import { join } from 'path'
-import { basename } from 'path'
+import { join, basename, dirname, extname } from 'path'
+
+function capitalize(input: string): string {
+  if (!input) return '';
+
+  return input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();
+}
+
+function lowerFirstLetter(input: string): string {
+  if (!input) return '';
+
+  return input.charAt(0).toLowerCase() + input.slice(1);
+}
+
+function getFilenameWithoutExtension(filePath: string): string {
+  const filenameWithExtension = basename(filePath);
+  const fileExtension = extname(filenameWithExtension);
+
+  return filenameWithExtension.replace(fileExtension, '');
+}
 
 const get_react_template_type = (srcs : string[]) : ReactTemplateType => {
   if(srcs.length > 1) {
@@ -63,6 +81,23 @@ function mkOrCleanDir(path: string): void {
   }
 }
 
+const isBundled = (task : Task) => {
+  return task.inlineCss && task.inlineJs && task.inlineImage && !task.externalStyle
+}
+
+const getTargetDir = (base : string, id : string, task : Task) => {
+  return isBundled(task) ? base : join(base, id)
+}
+
+const getDefaultTargetDir = (task : Task, id : string, coptions : CompilerOptions) => {
+  const base = join(coptions.wDir, task.contentDirSuffix ?? '', dirname(task.sources[0]))
+  return getTargetDir(base, id, task)
+}
+
+const getId = (task : Task) => {
+  return task.id ?? capitalize(getFilenameWithoutExtension(task.sources[0]))
+}
+
 /**
  * Creates a temporary React project to get compiled by webpack:
  * - 1 create project directory in temporary directory
@@ -72,7 +107,8 @@ function mkOrCleanDir(path: string): void {
  * @returns        TmpProject data
  */
 export const create_react_project = (task : Task, coptions : CompilerOptions) : ReactProjectData => {
-  const tmp_project_dir          = join(coptions.tmpDir, task.id);
+  const task_id                  = getId(task)
+  const tmp_project_dir          = join(coptions.tmpDir, task_id);
   const react_template           = coptions.getReactTemplate(get_react_template_type(task.sources))
   const react_template_path      = join(coptions.templateDir, react_template)
   const react_template_path_dest = join(tmp_project_dir, react_template)
@@ -80,16 +116,17 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
   const react_comps_path_dest    = join(tmp_project_dir, coptions.reactComponents)
   const index_html_path          = join(coptions.templateDir, coptions.htmlTemplate)
   const index_html_path_dest     = join(tmp_project_dir, coptions.htmlTemplate)
+  const target_dir               = task.targetDir ? getTargetDir(join(coptions.wDir, task.targetDir), task_id, task) : getDefaultTargetDir(task, task_id, coptions)
   mkOrCleanDir(tmp_project_dir)
   const copy                     = []
   if (task.sources.length == 1) {
     const content              = task.sources[0]
-    const content_path         = join(coptions.wDir, task.contentDirSuffix, content)
+    const content_path         = join(coptions.wDir, task.contentDirSuffix ?? '', content)
     const content_path_dest    = join(tmp_project_dir, 'content.md')
     copy.push({ from : content_path, to : content_path_dest })
     copyFileSync(content_path, content_path_dest)
   } else {
-    throw new Error(`Multi sources not supported (task '${task.id}')`)
+    throw new Error(`Multi sources not supported (task '${task_id}')`)
   }
   copyFileSync(react_template_path, react_template_path_dest)
   copyFileSync(index_html_path, index_html_path_dest)
@@ -98,12 +135,12 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     // copy components css
     copyDirectorySync(join(coptions.templateDir), tmp_project_dir)
   } else {
-    throw new Error(`Non default components '${coptions.reactComponents}' not supported yet (task '${task.id}')`)
+    throw new Error(`Non default components '${coptions.reactComponents}' not supported yet (task '${task_id}')`)
   }
   var styles : string[] = []
   if (!task.externalStyle) {
     task.styles.forEach(style => {
-      const style_path      = join(coptions.wDir, task.contentDirSuffix, style)
+      const style_path      = join(coptions.wDir, task.contentDirSuffix ?? '', style)
       const style_path_dest = join(tmp_project_dir, basename(style))
       copy.push({ from : style_path, to : style_path_dest })
       styles.push(style_path_dest)
@@ -114,8 +151,10 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
   }
   console.log(copy)
   return {
-    title         : task.id,
+    title         : task_id,
     dir           : tmp_project_dir,            // path to tmp project
+    targetDir     : target_dir,
+    targetName    : isBundled(task) ? lowerFirstLetter(task_id) + '.html' : 'index.html',
     main          : react_template_path_dest,   // path to main.tsx
     index         : index_html_path_dest,       // path in index.html
     styles        : styles,                     // list of styles
@@ -126,6 +165,7 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     inlineJs      : task.inlineJs,
     hasKatex      : true,
     hasPrism      : true,
-    copy          : copy
+    copy          : copy,
+    license       : task.license ? task.license : false
   }
 }
