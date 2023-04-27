@@ -158,7 +158,7 @@ function getPlugins(task : Task, project : ReactProjectData, coptions : Compiler
       }
     }; break;
     case 'H5P': {
-      plugins.push(new H5PWebpackPlugin())
+      plugins.push(new H5PWebpackPlugin(project))
     }
   }
   return plugins
