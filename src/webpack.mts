@@ -1,7 +1,9 @@
 //import rehypePrism from '@mapbox/rehype-prism';
 //import remarkPrism from 'remark-prism'
 import { remarkCodeFrame } from './codeframe.mjs'
-import { CompilerOptions, ReactProjectData } from './types.mjs'
+import { H5PWebpackPlugin } from './plugins/h5pwebpackplugin.mjs'
+import { InjectExternalCssPlugin } from './plugins/injectstylewebpackplugin.mjs'
+import { CompilerOptions, ReactProjectData, Task } from './types.mjs'
 import { watch } from 'chokidar'
 import CleanCSS from 'clean-css'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
@@ -19,7 +21,7 @@ import remarkMath from 'remark-math'
 import remarkMdx from 'remark-mdx'
 import TerserPlugin from 'terser-webpack-plugin'
 import webpack from 'webpack';
-import { Configuration as WebpackConfiguration } from 'webpack';
+import { Configuration as WebpackConfiguration, WebpackPluginInstance } from 'webpack';
 import webpackDevServer from 'webpack-dev-server'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
 
@@ -63,34 +65,137 @@ function watchAndCopySourceFiles(fileMappings: FileMapping[]): void {
   });
 }
 
-function getConfiguration(project : ReactProjectData, coptions : CompilerOptions, isDev : boolean) : Configuration {
+function getModule(project : ReactProjectData, coptions : CompilerOptions) {
+  return {
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader : coptions.modules.babelLoader,
+        }
+      },
+      {
+        test: /\.(ts|tsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader : coptions.modules.tsLoader,
+          options: {
+            configFile: join(project.dir, 'tsconfig.json'),
+            // include other ts-loader options if necessary
+            compilerOptions: {
+              typeRoots: [coptions.modules.types],
+            },
+          },
+        },
+      },
+      {
+        test: /\.(css|scss)$/,
+        use: [coptions.modules.styleLoader, coptions.modules.cssLoader],
+      },
+      {
+        test: /\.(jpg|jpeg|png|gif|mp3|svg)$/,
+        //type: 'asset/inline',
+        //type: 'asset/resource',
+        use: [coptions.modules.fileLoader],
+        //parser: {
+        //  dataUrlCondition: {
+        //    maxSize: 20 * 1024 // 20kb
+        //  }
+        //}
+      },
+      {
+        test: /\.(md|mdx)?$/,
+        use: [
+          {
+            loader: coptions.modules.babelLoader,
+          },
+          {
+            loader: coptions.modules.mdxLoader,
+            /** @type {import('@mdx-js/loader').Options} */
+            options: {
+              remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame],
+              rehypePlugins : [rehypeKatex, rehypeSlug, rehypePrismPlus]
+            }
+          }
+        ]
+      }
+    ],
+  }
+}
+
+function getPlugins(task : Task, project : ReactProjectData, coptions : CompilerOptions) : Array<WebpackPluginInstance> {
+  const plugins : Array<WebpackPluginInstance> = []
+  switch (task.targetType) {
+    case 'HTML': {
+      plugins.push(new HtmlWebpackPlugin({
+        filename: project.targetName,
+        title: project.title,
+        template: project.index,
+        inject: task.inlineJs ? 'body' : 'head',
+        templateParameters: {
+          'hasStyle' : !task.inlineCss && project.styles.length > 0,
+          'hasKatex' : project.hasKatex,
+          'hasPrism' : project.hasPrism,
+          'katexCss' : coptions.katexCss,
+          'prismCss' : join(coptions.prismCss, project.prismStyle),
+          'customCss': project.styles.length > 0 ? basename(project.styles[0]) : ''
+        }
+      }))
+      if (task.inlineJs) {
+        plugins.push(new HtmlInlineScriptPlugin())
+      }
+      if (project.styles.length > 0) {
+        if (task.inlineCss) {
+          plugins.push(new InjectExternalCssPlugin(project))
+        } else {
+          plugins.push(new CopyWebpackPlugin({
+            patterns: [
+              { from: project.styles[0], to: basename(project.styles[0]) },
+            ],
+          }))
+        }
+      }
+    }; break;
+    case 'H5P': {
+      plugins.push(new H5PWebpackPlugin())
+    }
+  }
+  return plugins
+}
+
+function getDevServerConfig(project : ReactProjectData) {
+  return {
+    onBeforeSetupMiddleware: function (devServer : webpackDevServer) {
+      if (!devServer) {
+        throw new Error('Webpack Dev Server is not defined!');
+      }
+      watchAndCopySourceFiles(project.copy);
+    },
+    host: 'localhost',
+    watchFiles: [`${project.dir}/*`],
+    compress: true,
+    port: 9000,
+    open: true,
+    hot: true,        // Add this line to enable HMR
+    liveReload: true, // Add this line to enable live reload as a fallback
+  }
+}
+
+function getConfiguration(task : Task, project : ReactProjectData, coptions : CompilerOptions, isDev : boolean) : Configuration {
   return {
     context: project.dir,
     entry  : project.main,
     output: {
-      filename: '[name].js',
-      path: project.targetDir,
-      publicPath: '/',
+      filename:   '[name].js',
+      path:       project.targetDir,
+      publicPath: isDev ? '/' : undefined,
     },
-    mode : isDev ? "development" : "production",
-    devServer: isDev ? {
-      onBeforeSetupMiddleware: function (devServer) {
-        if (!devServer) {
-          throw new Error('Webpack Dev Server is not defined!');
-        }
-        watchAndCopySourceFiles(project.copy);
-      },
-      host: 'localhost',
-      watchFiles: [`${project.dir}/*`],
-      compress: true,
-      port: 9000,
-      open: true,
-      hot: true, // Add this line to enable HMR
-      liveReload: true, // Add this line to enable live reload as a fallback
-    } : undefined,
+    mode:         isDev ? "development" : "production",
+    devServer:    isDev ? getDevServerConfig(project) : undefined,
     resolve : {
       extensions: ['.tsx', '...'],
-      modules: [join(coptions.wDir, "node_modules"), "node_modules"],
+      modules:    [join(coptions.wDir, "node_modules"), "node_modules"],
     },
     optimization: {
       minimize: true,
@@ -98,115 +203,15 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
         new TerserPlugin({
           terserOptions: {
             format: {
-              comments: project.license, // This line will remove the license-related comments
+              comments: task.license, // This line will remove the license-related comments
             },
           },
-          extractComments: project.license, // This line will prevent creating a separate file for license comments
+          extractComments: task.license, // This line will prevent creating a separate file for license comments
         }),
       ],
     },
-    module : {
-      rules: [
-        {
-          test: /\.(js|jsx)$/,
-          exclude: /node_modules/,
-          use: {
-            loader : coptions.modules.babelLoader,
-          }
-        },
-        {
-          test: /\.(ts|tsx)$/,
-          exclude: /node_modules/,
-          use: {
-            loader : coptions.modules.tsLoader,
-            options: {
-              configFile: join(project.dir, 'tsconfig.json'),
-              // include other ts-loader options if necessary
-              compilerOptions: {
-                typeRoots: [coptions.modules.types],
-              },
-            },
-          },
-        },
-        {
-          test: /\.(css|scss)$/,
-          use: [coptions.modules.styleLoader, coptions.modules.cssLoader],
-        },
-        {
-          test: /\.(jpg|jpeg|png|gif|mp3|svg)$/,
-          //type: 'asset/inline',
-          //type: 'asset/resource',
-          use: [coptions.modules.fileLoader],
-          //parser: {
-          //  dataUrlCondition: {
-          //    maxSize: 20 * 1024 // 20kb
-          //  }
-          //}
-        },
-        {
-          test: /\.(md|mdx)?$/,
-          use: [
-            {
-              loader: coptions.modules.babelLoader,
-            },
-            {
-              loader: coptions.modules.mdxLoader,
-              /** @type {import('@mdx-js/loader').Options} */
-              options: {
-                remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame],
-                rehypePlugins : [rehypeKatex, rehypeSlug, rehypePrismPlus]
-              }
-            }
-          ]
-        }
-      ],
-    },
-    plugins : [
-      new HtmlWebpackPlugin({
-        filename: project.targetName,
-        title: project.title,
-        template: project.index,
-        inject: project.inlineJs ? 'body' : 'head',
-        templateParameters: {
-          'hasStyle' : !project.inlineCss && project.styles.length > 0,
-          'hasKatex' : project.hasKatex,
-          'hasPrism' : project.hasPrism,
-          'katexCss' : coptions.katexCss,
-          'prismCss' : join(coptions.prismCss, project.prismStyle),
-          'customCss': project.styles.length > 0 ? basename(project.styles[0]) : ''
-        }
-      }),
-      //new webpack.DefinePlugin({ "process.env.API_URL": "\"http://localhost:8080\"" })
-    ].concat(project.inlineJs ? [
-      (new HtmlInlineScriptPlugin()) as unknown as HtmlWebpackPlugin
-    ] : [])
-    .concat(project.inlineCss && project.styles.length > 0 ? [
-      {
-        apply: (compiler : any) => {
-          compiler.hooks.compilation.tap('InjectExternalCss', (compilation : any) => {
-            HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync(
-              'InjectExternalCss',
-              (data, cb) => {
-                const cssFilePath = project.styles[0]; // Replace with the actual path to your CSS file
-                const cssContent = readFileSync(cssFilePath, 'utf-8');
-                const cleanCSS = new CleanCSS();
-                const minifiedCSS = cleanCSS.minify(cssContent);
-                const styleTag = `<style>${minifiedCSS.styles}</style>`;
-                data.html = data.html.replace('</body>', `${styleTag}</body>`);
-                cb(null, data);
-              }
-            );
-          });
-        },
-      } as unknown as HtmlWebpackPlugin
-    ] : [])
-    .concat(!project.inlineCss && project.styles.length > 0 ? [
-      new CopyWebpackPlugin({
-        patterns: [
-          { from: project.styles[0], to: basename(project.styles[0]) },
-        ],
-      })
-    ] as unknown as HtmlWebpackPlugin : []),
+    module : getModule(project, coptions),
+    plugins : getPlugins(task, project, coptions),
     externals: {
       "react": "React",
       "react-dom": "ReactDOM",
@@ -214,8 +219,8 @@ function getConfiguration(project : ReactProjectData, coptions : CompilerOptions
   }
 }
 
-export async function exec_webpack(project : ReactProjectData, coptions : CompilerOptions) {
-  const config = getConfiguration(project, coptions, false)
+export async function exec_webpack(task : Task, project : ReactProjectData, coptions : CompilerOptions) {
+  const config = getConfiguration(task, project, coptions, false)
   //console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
@@ -242,8 +247,8 @@ export async function exec_webpack(project : ReactProjectData, coptions : Compil
   });
 }
 
-export function start_webpack_dev(project : ReactProjectData, coptions : CompilerOptions) {
-  const config = getConfiguration(project, coptions, true)
+export function start_webpack_dev(task : Task, project : ReactProjectData, coptions : CompilerOptions) {
+  const config = getConfiguration(task, project, coptions, true)
   console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config);
   if (config.devServer && config.devServer.port && config.devServer.host) {

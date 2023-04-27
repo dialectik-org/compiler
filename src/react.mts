@@ -163,12 +163,8 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     styles        : styles,                     // list of styles
     externalStyle : task.externalStyle,
     prismStyle    : task.prismStyle ?? 'prism-one-light.css',
-    inlineCss     : task.inlineCss,
-    inlineImage   : task.inlineImage,
-    inlineJs      : task.inlineJs,
     hasKatex      : true,
     hasPrism      : true,
     copy          : copy,
-    license       : task.license ? task.license : false
   }
 }

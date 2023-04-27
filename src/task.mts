@@ -6,12 +6,12 @@ export const execute_task = async (task : Task, coptions : CompilerOptions) => {
   console.log('Compile Task:', JSON.stringify(task, null,2))
   const project = create_react_project(task, coptions)
   console.log(project)
-  await exec_webpack(project, coptions)
+  await exec_webpack(task, project, coptions)
 }
 
 export const start_server = async (task : Task, coptions : CompilerOptions) => {
   console.log('Start Dev server for Task:', JSON.stringify(task, null,2))
   const project = create_react_project(task, coptions)
   console.log(project)
-  await start_webpack_dev(project, coptions)
+  await start_webpack_dev(task, project, coptions)
 }

@@ -1,4 +1,4 @@
-import { join } from 'path'
+import { dirname, join } from 'path'
 
 export type ReactTemplateType = 'Single' | 'Multi'
 
@@ -30,18 +30,15 @@ export interface ReactProjectData {
   styles        : string[], // list of styles
   externalStyle : boolean,
   prismStyle    : string,
-  inlineCss     : boolean,
-  inlineImage   : boolean,
-  inlineJs      : boolean,
   hasKatex      : boolean,
   hasPrism      : boolean,
-  license       : boolean,
   copy          : Array<{ from : string, to : string  }>
 }
 
 export class CompilerOptions {
   wDir            : string
   templateDir     : string
+  modulesDir      : string
   htmlTemplate    : string
   reactComponents : string
   katexCss        : string
@@ -59,6 +56,7 @@ export class CompilerOptions {
   constructor(wd  : string, compilerdir : string) {
     this.wDir            = wd
     this.templateDir     = join(compilerdir, 'templates')
+    this.modulesDir      = compilerdir
     this.htmlTemplate    = 'index.html'
     this.reactComponents = 'components.tsx'
     this.katexCss        = 'https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/katex.min.css'
