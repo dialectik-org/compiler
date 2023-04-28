@@ -1,11 +1,10 @@
 //import rehypePrism from '@mapbox/rehype-prism';
 //import remarkPrism from 'remark-prism'
 import { remarkCodeFrame } from './plugins/remark/codeframe.mjs'
-import { H5PWebpackPlugin } from './plugins/webpack/h5pwebpackplugin.mjs'
-import { InjectExternalCssPlugin } from './plugins/webpack/injectstylewebpackplugin.mjs'
+import { H5PWebpackPlugin } from './plugins/webpack/h5pWebpackPlugin.mjs'
+import { InjectExternalCssPlugin } from './plugins/webpack/injectStyleWebpackPlugin.mjs'
 import { CompilerOptions, ReactProjectData, Task } from './types.mjs'
 import { watch } from 'chokidar'
-import CleanCSS from 'clean-css'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
 import { copyFileSync, readFileSync } from 'fs';
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'

@@ -5,6 +5,7 @@ import webpack from 'webpack';
 import { Source } from 'webpack-sources'
 import { mkOrCleanDir, lowerFirstLetter } from '../../fsutils.mjs';
 import archiver from 'archiver';
+import CleanCSS from 'clean-css';
 
 class BinarySource implements Source {
   private _buffer: Buffer;
@@ -77,8 +78,21 @@ export class H5PWebpackPlugin {
           const fileContent = compilation.assets[generatedJSFile].source();
           const base64EncodedContent = Buffer.from(fileContent).toString('base64');
 
+          let jsonContent : { script :string, style ?: string }= {
+            script: base64EncodedContent
+          }
+
+          // Base64 encode the CSS file content
+          if (this.project.styles.length > 0) {
+            const cssContent = readFileSync(this.project.styles[0],'utf-8')
+            const cleanCSS = new CleanCSS();
+            const minifiedCSS = cleanCSS.minify(cssContent);
+            const base64EncodedCss = Buffer.from(minifiedCSS.styles).toString('base64')
+            jsonContent = { ...jsonContent, style : base64EncodedCss }
+          }
+
           // Create a JSON file with the encoded content
-          const jsonOutput = JSON.stringify({ script: base64EncodedContent });
+          const jsonOutput = JSON.stringify(jsonContent);
 
           // Prepare the temporary directory
           const tmpComponentPath = join(this.project.dir, 'component');
@@ -99,7 +113,7 @@ export class H5PWebpackPlugin {
             preloadedDependencies: [{
                 machineName: "H5P.Dialectik",
                 majorVersion: "0",
-                minorVersion: "1"
+                minorVersion: "2"
             }]
           }
           const h5pJsonPath = join(tmpComponentPath, 'h5P.json')
