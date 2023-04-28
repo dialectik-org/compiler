@@ -2,6 +2,13 @@
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, rmSync, unlinkSync } from 'fs'
 import { join, basename, extname } from 'path'
 
+export function isOnlineUrl(path: string): boolean {
+  // Regular expression to match URLs
+  const urlRegex: RegExp = /^(https?:\/\/|ftp:\/\/)/i;
+
+  // Test the path against the regular expression
+  return urlRegex.test(path);
+}
 
 export function capitalize(input: string): string {
   if (!input) return '';

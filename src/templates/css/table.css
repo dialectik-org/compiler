@@ -1,0 +1,29 @@
+@import './vars.css';
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
+  border: 1px solid #ddd;
+}
+
+thead {
+  background-color: #f6f8fa;
+  font-weight: bold;
+}
+
+th,
+td {
+  padding: 8px 16px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+tr:nth-child(even) {
+  background-color: #f6f8fa;
+}
+
+tr:hover {
+  background-color: var(--table-hover-color);
+}

@@ -5,6 +5,7 @@ import copy from 'copy-text-to-clipboard';
 // @ts-ignore
 import React from 'react';
 
+import './css/table.css'
 import './css/code.css'
 import './css/admonition.css'
 import './css/copy-button.css'

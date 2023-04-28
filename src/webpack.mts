@@ -171,7 +171,7 @@ function getDevServerConfig(project : ReactProjectData) {
       if (!devServer) {
         throw new Error('Webpack Dev Server is not defined!');
       }
-      watchAndCopySourceFiles(project.copy);
+      watchAndCopySourceFiles(project.watch);
     },
     host: 'localhost',
     watchFiles: [`${project.dir}/*`],

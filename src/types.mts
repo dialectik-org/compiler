@@ -32,7 +32,7 @@ export interface ReactProjectData {
   prismStyle    : string,
   hasKatex      : boolean,
   hasPrism      : boolean,
-  copy          : Array<{ from : string, to : string  }>
+  watch          : Array<{ from : string, to : string  }>
 }
 
 export class CompilerOptions {

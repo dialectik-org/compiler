@@ -1,9 +1,42 @@
 import { CompilerOptions, ReactProjectData, ReactTemplateType, Task } from './types.mjs'
-import { copyFileSync } from 'fs'
+import { copyFileSync, mkdirSync } from 'fs'
 import { tmpdir } from 'os';
 import { basename, dirname, join } from 'path'
-import { copyDirectorySync, mkOrCleanDir, capitalize, lowerFirstLetter, getFilenameWithoutExtension } from './fsutils.mjs'
+import { copyDirectorySync, mkOrCleanDir, capitalize, lowerFirstLetter, getFilenameWithoutExtension, isOnlineUrl } from './fsutils.mjs'
+import { readFileSync } from 'fs';
+import { remark } from 'remark';
+import parse from 'remark-parse';
+import { Node, Parent } from 'unist';
+import { visit } from 'unist-util-visit';
 
+interface ImageNode extends Node {
+  type: 'image';
+  url: string;
+}
+
+interface ImageNode extends Node {
+  type: 'image';
+  url: string;
+}
+
+function isImageNode(node: Node): node is ImageNode {
+  return node.type === 'image' && typeof (node as ImageNode).url === 'string';
+}
+
+function extractImageUrlsSync(filePath: string): string[] {
+  const fileContent = readFileSync(filePath, 'utf-8');
+  const tree = remark().use(parse).parse(fileContent) as Parent;
+
+  const imageUrls: string[] = [];
+
+  visit(tree, isImageNode, (node: ImageNode) => {
+    if(!isOnlineUrl(node.url)) {
+      imageUrls.push(node.url);
+    }
+  });
+
+  return imageUrls;
+}
 
 const get_react_template_type = (srcs : string[]) : ReactTemplateType => {
   if(srcs.length > 1) {
@@ -52,13 +85,22 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
   const index_html_path_dest     = join(tmp_project_dir, coptions.htmlTemplate)
   const target_dir               = task.targetDir ? getTargetDir(join(coptions.wDir, task.targetDir), task_id, task) : getDefaultTargetDir(task, task_id, coptions)
   mkOrCleanDir(tmp_project_dir)
-  const copy                     = []
+  const watch                    = []
   if (task.sources.length == 1) {
     const content              = task.sources[0]
-    const content_path         = join(coptions.wDir, task.contentDirSuffix ?? '', content)
+    const content_dir          = join(coptions.wDir, task.contentDirSuffix ?? '')
+    const content_path         = join(content_dir, content)
     const content_path_dest    = join(tmp_project_dir, 'content.md')
-    copy.push({ from : content_path, to : content_path_dest })
+    watch.push({ from : content_path, to : content_path_dest })
     copyFileSync(content_path, content_path_dest)
+    const imageUrls = extractImageUrlsSync(content_path)
+    imageUrls.forEach(url => {
+      const target_image_dir = join(tmp_project_dir, dirname(url))
+      mkdirSync(target_image_dir, { recursive: true })
+      const source_image_path = join(dirname(content_path), url)
+      const target_image_path = join(tmp_project_dir, url)
+      copyFileSync(source_image_path, target_image_path)
+    })
   } else {
     throw new Error(`Multi sources not supported (task '${task_id}')`)
   }
@@ -76,7 +118,7 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     task.styles.forEach(style => {
       const style_path      = join(coptions.wDir, task.contentDirSuffix ?? '', style)
       const style_path_dest = join(tmp_project_dir, basename(style))
-      copy.push({ from : style_path, to : style_path_dest })
+      watch.push({ from : style_path, to : style_path_dest })
       styles.push(style_path_dest)
       copyFileSync(style_path, style_path_dest)
     })
@@ -98,6 +140,6 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     prismStyle    : task.prismStyle ?? 'prism-one-light.css',
     hasKatex      : true,
     hasPrism      : true,
-    copy          : copy,
+    watch          : watch,
   }
 }
