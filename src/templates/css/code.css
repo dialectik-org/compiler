@@ -1,0 +1,23 @@
+@import './vars.css';
+
+code {
+  background-color: var(--code-background);
+  border: 0.1rem solid rgba(0,0,0,.1);
+  border-radius: var(--code-border-radius);
+  font-family: var(--font-family-monospace);
+  font-size: var(--code-font-size);
+  padding: var(--code-padding-vertical) var(--code-padding-horizontal);
+}
+
+pre > code {
+  /* Reset or override styles */
+  background-color: initial;
+  padding: initial;
+  display: initial;
+  line-height: 1.5;
+  border: initial;
+  border-left-width: initial;
+  max-width: initial;
+  white-space: initial;
+  overflow: initial;
+}

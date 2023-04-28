@@ -1,3 +1,4 @@
+@import './vars.css';
 
 /**
  * Inspired by gatsby remark prism - https://www.gatsbyjs.com/plugins/gatsby-remark-prismjs/
@@ -29,8 +30,8 @@
 .highlight-line {
   margin-left: -16px;
   margin-right: -16px;
-  background-color: rgba(55, 65, 81, 0.123); /* Set highlight bg color */
-  border-left: 4px solid rgb(59, 130, 246); /* Set highlight accent border color */
+  background-color: var(--admonition-info-bg-color); /* Set highlight bg color */
+  border-left: 4px solid var(--admonition-info-border-color); /* Set highlight accent border color */
 }
 
 .line-number::before {

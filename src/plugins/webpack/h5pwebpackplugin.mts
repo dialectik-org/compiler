@@ -1,9 +1,9 @@
-import { ReactProjectData } from '../types.mjs';
+import { ReactProjectData } from '../../types.mjs';
 import { writeFileSync, createWriteStream, readFileSync } from 'fs';
 import { join } from 'path';
 import webpack from 'webpack';
 import { Source } from 'webpack-sources'
-import { mkOrCleanDir, lowerFirstLetter } from '../fsutils.mjs';
+import { mkOrCleanDir, lowerFirstLetter } from '../../fsutils.mjs';
 import archiver from 'archiver';
 
 class BinarySource implements Source {

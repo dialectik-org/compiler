@@ -1,8 +1,8 @@
 //import rehypePrism from '@mapbox/rehype-prism';
 //import remarkPrism from 'remark-prism'
-import { remarkCodeFrame } from './codeframe.mjs'
-import { H5PWebpackPlugin } from './plugins/h5pwebpackplugin.mjs'
-import { InjectExternalCssPlugin } from './plugins/injectstylewebpackplugin.mjs'
+import { remarkCodeFrame } from './plugins/remark/codeframe.mjs'
+import { H5PWebpackPlugin } from './plugins/webpack/h5pwebpackplugin.mjs'
+import { InjectExternalCssPlugin } from './plugins/webpack/injectstylewebpackplugin.mjs'
 import { CompilerOptions, ReactProjectData, Task } from './types.mjs'
 import { watch } from 'chokidar'
 import CleanCSS from 'clean-css'
@@ -24,6 +24,7 @@ import webpack from 'webpack';
 import { Configuration as WebpackConfiguration, WebpackPluginInstance } from 'webpack';
 import webpackDevServer from 'webpack-dev-server'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
+import remarkAdmonitionBlock from './plugins/remark/admonition.mjs'
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -114,7 +115,7 @@ function getModule(project : ReactProjectData, coptions : CompilerOptions) {
             loader: coptions.modules.mdxLoader,
             /** @type {import('@mdx-js/loader').Options} */
             options: {
-              remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame],
+              remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame, remarkAdmonitionBlock],
               rehypePlugins : [rehypeKatex, rehypeSlug, rehypePrismPlus]
             }
           }

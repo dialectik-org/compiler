@@ -1,4 +1,4 @@
-import { ReactProjectData } from '../types.mjs';
+import { ReactProjectData } from '../../types.mjs';
 import CleanCSS from 'clean-css';
 import { readFileSync } from 'fs';
 import HtmlWebpackPlugin from 'html-webpack-plugin'
