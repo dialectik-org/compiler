@@ -15,10 +15,8 @@ export const execute_task = async (task : Task, plugins : Array<INamedDialectikP
 export const start_server = async (task : Task, plugins : Array<INamedDialectikPlugin>, coptions : CompilerOptions) => {
   console.log('Start Dev server for Task:', JSON.stringify(task, null,2))
   const required_plugins = getRequiredPlugins(task, plugins, coptions)
-  if (required_plugins.length > 0) {
-    console.info('required plugins:', required_plugins.map(plugin => plugin.name))
-  }
+  console.info('required plugins:', required_plugins.map(plugin => plugin.name))
   const project = create_react_project(task, required_plugins, coptions)
   console.log(project)
-  await start_webpack_dev(task, project, coptions)
+  await start_webpack_dev(task, project, coptions, required_plugins)
 }

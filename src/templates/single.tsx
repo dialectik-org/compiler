@@ -17,6 +17,6 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-      <Content components={ { ...getComponents(), ...components} }/>
+      <Content components={ components }/>
   </React.StrictMode>
 );

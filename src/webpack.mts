@@ -259,8 +259,8 @@ export async function exec_webpack(task : Task, project : ReactProjectData, copt
   });
 }
 
-export function start_webpack_dev(task : Task, project : ReactProjectData, coptions : CompilerOptions) {
-  const config = getConfiguration(task, project, coptions, [], true)
+export function start_webpack_dev(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<INamedDialectikPlugin>) {
+  const config = getConfiguration(task, project, coptions, plugins, true)
   console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config);
   if (config.devServer && config.devServer.port && config.devServer.host) {
