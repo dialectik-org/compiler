@@ -3,11 +3,13 @@ import { copyFileSync, mkdirSync } from 'fs'
 import { tmpdir } from 'os';
 import { basename, dirname, join } from 'path'
 import { copyDirectorySync, mkOrCleanDir, capitalize, lowerFirstLetter, getFilenameWithoutExtension, isOnlineUrl } from './fsutils.mjs'
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { remark } from 'remark';
 import parse from 'remark-parse';
 import { Node, Parent } from 'unist';
 import { visit } from 'unist-util-visit';
+import { INamedDialectikPlugin } from './plugins.mjs';
+import { plugins } from 'prismjs';
 
 interface ImageNode extends Node {
   type: 'image';
@@ -65,6 +67,87 @@ const getId = (task : Task) => {
   return task.id ?? capitalize(getFilenameWithoutExtension(task.sources[0]))
 }
 
+function formatString(input: string): string {
+  // Split the input string on '/' and '-'
+  const parts = input.split(/[/\-]/);
+
+  // Remove special characters, capitalize each item, and join them together
+  const formatted = parts
+    .map((part) => part.replace(/[^a-zA-Z0-9]+/g, ''))
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+
+  return formatted;
+}
+
+function getComponentName(plugin : INamedDialectikPlugin) {
+  return capitalize(formatString(plugin.name)) + (plugin.react ? plugin.react.componentname : '')
+}
+
+const generateImports = (plugins: Array<INamedDialectikPlugin>) : string => {
+  const imports : string[] = plugins.reduce((acc, plugin) => {
+    if (plugin.react !== undefined) {
+      const componentName = getComponentName(plugin)
+      return acc.concat([
+        "import { " + plugin.react.componentname + " as " +  componentName + " } from './" + basename(plugin.name) + "/component'"
+      ])
+    } else {
+      return acc
+    }
+  }, [] as string[])
+  return imports.join('\n')
+}
+
+const generateComponents = (plugins: Array<INamedDialectikPlugin>) : string => {
+  const components : string[] = plugins.reduce((acc, plugin) => {
+    if (plugin.react !== undefined) {
+      const componentName = getComponentName(plugin)
+      return acc.concat([
+        plugin.react.tagname + " : " +  componentName
+      ])
+    } else {
+      return acc
+    }
+  }, [] as string[])
+  return '{ ' + components.join(', ') + ' }'
+}
+
+const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Array<INamedDialectikPlugin>) => {
+  // Read the template file
+  const template = readFileSync(inputFilePath, 'utf-8');
+
+  // Define the values to replace the placeholders
+  const values : { [key:string]: string } = {
+    imports: generateImports(plugins),
+    components: generateComponents(plugins),
+  };
+  console.log(JSON.stringify(values, null, 2))
+
+  // Replace the placeholders with the actual values
+  const generatedCode = template.replace(/\[\[(\w+)\]\]/gi, (match, variableName : string) => {
+    return values[variableName] || '';
+  });
+
+  // Write the generated code to a new file
+  try {
+    writeFileSync(outputFilePath, generatedCode, 'utf8');
+    console.log(`Generated code was successfully written to ${outputFilePath}`);
+  } catch (error) {
+    console.error(`Error writing generated code to ${outputFilePath}:`, error);
+  }
+}
+
+const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<INamedDialectikPlugin>, coptions : CompilerOptions) => {
+  plugins.forEach(plugin => {
+    if (plugin.react !== undefined) {
+      const sourceDir = join(coptions.wDir, 'node_modules', plugin.name, 'lib', 'react')
+      const targetDir = join(tmp_project_dir, basename(plugin.name))
+      console.log(`copy ${sourceDir} to ${targetDir}`)
+      copyDirectorySync(sourceDir, targetDir)
+    }
+  })
+}
+
 /**
  * Creates a temporary React project to get compiled by webpack:
  * - 1 create project directory in temporary directory
@@ -73,7 +156,7 @@ const getId = (task : Task) => {
  * @param coptions compiler options
  * @returns        TmpProject data
  */
-export const create_react_project = (task : Task, coptions : CompilerOptions) : ReactProjectData => {
+export const create_react_project = (task : Task, plugins: Array<INamedDialectikPlugin>, coptions : CompilerOptions) : ReactProjectData => {
   const task_id                  = getId(task)
   const tmp_project_dir          = task.tmpDir ? join(coptions.wDir, task.tmpDir, task_id) : join(tmpdir(), task_id);
   const react_template           = coptions.getReactTemplate(get_react_template_type(task.sources))
@@ -104,12 +187,13 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
   } else {
     throw new Error(`Multi sources not supported (task '${task_id}')`)
   }
-  copyFileSync(react_template_path, react_template_path_dest)
+  copyPluginsComponent(tmp_project_dir, plugins, coptions)
+  generateMain(react_template_path, react_template_path_dest, plugins)
   copyFileSync(index_html_path, index_html_path_dest)
   if (task.components == 'Default') {
     copyFileSync(default_react_comps_path, react_comps_path_dest)
     // copy components css
-    copyDirectorySync(join(coptions.templateDir), tmp_project_dir)
+    copyDirectorySync(join(coptions.templateDir, 'css'), join(tmp_project_dir, 'css'))
   } else {
     throw new Error(`Non default components '${coptions.reactComponents}' not supported yet (task '${task_id}')`)
   }
@@ -138,7 +222,6 @@ export const create_react_project = (task : Task, coptions : CompilerOptions) : 
     styles        : styles,                     // list of styles
     externalStyle : task.externalStyle,
     prismStyle    : task.prismStyle ?? 'prism-one-light.css',
-    hasKatex      : true,
     hasPrism      : true,
     watch          : watch,
   }

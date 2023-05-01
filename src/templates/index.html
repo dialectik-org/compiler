@@ -15,9 +15,9 @@
             </script>
             <link rel="stylesheet" href="<%= htmlWebpackPlugin.options.templateParameters.prismCss %>">
         <% } %>
-        <% if (htmlWebpackPlugin.options.templateParameters.hasKatex) { %>
-            <link rel="stylesheet" href="<%= htmlWebpackPlugin.options.templateParameters.katexCss %>">
-            <% } %>
+        <% stylesheets.forEach((stylesheet) => { %>
+            <link rel="stylesheet" href="<%= stylesheet %>" />
+        <% }); %>
         </head>
         <title><%= htmlWebpackPlugin.options.title %></title>
     <body>

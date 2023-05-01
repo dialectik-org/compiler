@@ -1,39 +1,40 @@
-import { join, extname } from 'path';
-import { existsSync, readdirSync, Dirent, readFileSync } from 'fs';
-import { refractor } from 'refractor'
-import { CompilerOptions } from './types.mjs';
+import { join } from 'path';
+import { readFileSync } from 'fs';
+import { CompilerOptions, Task } from './types.mjs';
+import { IDialectikPlugin, IPluginProvider } from '@dialectik/plugin-interface'
 
-export const loadPlugins = (options: CompilerOptions) => {
-  const prismPluginSrcDir = join(options.wDir, 'src/plugins/prism');
-  if (existsSync(prismPluginSrcDir)) {
-    loadPluginFiles(prismPluginSrcDir);
-  }
+export type INamedDialectikPlugin = IDialectikPlugin & { name : string }
+
+export const loadPlugins = async (options: CompilerOptions) : Promise<Array<INamedDialectikPlugin>> => {
   const packageJsonPath = join(options.wDir, 'package.json');
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  if (packageJson.dialectik.plugins.prism !== undefined) {
-    packageJson.dialectik.plugins.prism.forEach((pluginName : string) => {
-    try {
-      console.log(pluginName);
-      const pluginPath = join(options.wDir, 'node_modules', pluginName);
-      if (existsSync(pluginPath)) {
-        loadPluginFiles(pluginPath)
-      } else {
-        console.warn(`Plugin "${pluginName}" not found in node_modules.`);
-      }
-    } catch (error) {
-      console.error(`Failed to load plugin "${pluginName}":`, error);
-    }
+  if (packageJson?.dialectik?.plugins?.length !== undefined) {
+    const pluginPromises = packageJson.dialectik.plugins.map(async (pluginName : string) => {
+      const pluginModule = await import(pluginName);
+      const pluginInstance: IDialectikPlugin = (pluginModule.PluginProvider as IPluginProvider).getPlugin();
+      return { ...pluginInstance, name: pluginName };
     });
+    const plugins = await Promise.all(pluginPromises);
+    return plugins;
   }
+  console.warn("No plugin declaration found in package.json")
+  return []
 };
 
-const loadPluginFiles = (pluginDirectory: string) => {
-  readdirSync(pluginDirectory, { withFileTypes: true }).forEach(async (entry: Dirent) => {
-    if (entry.isFile() && extname(entry.name) === '.mjs') {
-      const grammar = join(pluginDirectory, entry.name);
-      import(grammar).then((lang) => {
-        refractor.register(lang.default);
-      });
-    }
-  });
-};
+export const getRequiredPlugins = (task : Task, plugins : Array<INamedDialectikPlugin>, coptions : CompilerOptions) : Array<INamedDialectikPlugin> => {
+  if (task.sources.length == 1) {
+    const content              = task.sources[0]
+    const content_dir          = join(coptions.wDir, task.contentDirSuffix ?? '')
+    const content_path         = join(content_dir, content)
+    const fileContent = readFileSync(content_path, 'utf-8');
+    return plugins.reduce((acc, plugin) => {
+      if (plugin.isRequired(fileContent)) {
+        return acc.concat([plugin])
+      } else {
+        return acc
+      }
+    }, [] as Array<INamedDialectikPlugin>)
+  } else {
+    throw new Error(`Multi sources not supported (task '${task.id}')`)
+  }
+}

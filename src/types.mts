@@ -30,7 +30,6 @@ export interface ReactProjectData {
   styles        : string[], // list of styles
   externalStyle : boolean,
   prismStyle    : string,
-  hasKatex      : boolean,
   hasPrism      : boolean,
   watch          : Array<{ from : string, to : string  }>
 }
@@ -41,8 +40,6 @@ export class CompilerOptions {
   modulesDir      : string
   htmlTemplate    : string
   reactComponents : string
-  katexCss        : string
-  prismCss        : string
   modules         : {
     babelLoader   : string,
     tsLoader      : string,
@@ -59,8 +56,6 @@ export class CompilerOptions {
     this.modulesDir      = compilerdir
     this.htmlTemplate    = 'index.html'
     this.reactComponents = 'components.tsx'
-    this.katexCss        = 'https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/katex.min.css'
-    this.prismCss        = 'https://cdn.jsdelivr.net/npm/prism-themes@1.9.0/themes'
     this.reactTemplates  = [
       ['Single', 'single.tsx'],
       ['Multi',  'multi.tsx' ]

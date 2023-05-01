@@ -6,6 +6,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { getComponents } from './components'
+// @ts-ignore
+[[imports]]
+// @ts-ignore
+const components : MDXComponents = { ...getComponents(), ...[[components]] }
 
 const root = ReactDOM.createRoot(
     document.getElementById('root') as HTMLElement
@@ -13,6 +17,6 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-      <Content components={getComponents()}/>
+      <Content components={ { ...getComponents(), ...components} }/>
   </React.StrictMode>
 );

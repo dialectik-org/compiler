@@ -1,29 +1,23 @@
-//import rehypePrism from '@mapbox/rehype-prism';
-//import remarkPrism from 'remark-prism'
-import { remarkCodeFrame } from './plugins/remark/codeframe.mjs'
-import { H5PWebpackPlugin } from './plugins/webpack/h5pWebpackPlugin.mjs'
-import { InjectExternalCssPlugin } from './plugins/webpack/injectStyleWebpackPlugin.mjs'
+import { H5PWebpackPlugin } from './plugins/webpack/h5pwebpackplugin.mjs'
+import { InjectExternalCssPlugin } from './plugins/webpack/injectstylewebpackplugin.mjs'
 import { CompilerOptions, ReactProjectData, Task } from './types.mjs'
 import { watch } from 'chokidar'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
-import { copyFileSync, readFileSync } from 'fs';
+import { copyFileSync } from 'fs';
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import { basename, join } from 'path'
-import rehypeKatex from 'rehype-katex'
-import rehypePrismPlus from 'rehype-prism-plus'
 import rehypeSlug from 'rehype-slug';
 import remarkEmbedImages from 'remark-embed-images'
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
 import remarkMdx from 'remark-mdx'
 import TerserPlugin from 'terser-webpack-plugin'
 import webpack from 'webpack';
 import { Configuration as WebpackConfiguration, WebpackPluginInstance } from 'webpack';
 import webpackDevServer from 'webpack-dev-server'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
-import remarkAdmonitionBlock from './plugins/remark/admonition.mjs'
+import { INamedDialectikPlugin } from './plugins.mjs'
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -65,7 +59,21 @@ function watchAndCopySourceFiles(fileMappings: FileMapping[]): void {
   });
 }
 
-function getModule(project : ReactProjectData, coptions : CompilerOptions) {
+function getModule(project : ReactProjectData, coptions : CompilerOptions, required_plugins : Array<INamedDialectikPlugin>) {
+  const required_remark_plugins = required_plugins.reduce((acc, plugin) => {
+    if (plugin.remarkPlugins !== undefined) {
+      return acc.concat([plugin.remarkPlugins])
+    } else {
+      return acc
+    }
+  }, [] as Array<any>)
+  const required_rehype_plugins = required_plugins.reduce((acc, plugin) => {
+    if (plugin.rehypePlugins !== undefined) {
+      return acc.concat([plugin.rehypePlugins])
+    } else {
+      return acc
+    }
+  }, [] as Array<any>)
   return {
     rules: [
       {
@@ -114,8 +122,8 @@ function getModule(project : ReactProjectData, coptions : CompilerOptions) {
             loader: coptions.modules.mdxLoader,
             /** @type {import('@mdx-js/loader').Options} */
             options: {
-              remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm, remarkMath, remarkCodeFrame, remarkAdmonitionBlock],
-              rehypePlugins : [rehypeKatex, rehypeSlug, rehypePrismPlus]
+              remarkPlugins : [remarkEmbedImages, remarkFrontmatter,remarkMdx, remarkGfm].concat(required_remark_plugins),
+              rehypePlugins : [rehypeSlug].concat(required_rehype_plugins)
             }
           }
         ]
@@ -124,7 +132,14 @@ function getModule(project : ReactProjectData, coptions : CompilerOptions) {
   }
 }
 
-function getPlugins(task : Task, project : ReactProjectData, coptions : CompilerOptions) : Array<WebpackPluginInstance> {
+function getPlugins(task : Task, project : ReactProjectData, coptions : CompilerOptions, dialectik_plugins : Array<INamedDialectikPlugin>) : Array<WebpackPluginInstance> {
+  const stylesheets = dialectik_plugins.reduce((acc, plugin) => {
+    if (plugin.stylesheets !== undefined) {
+      return acc.concat(plugin.stylesheets)
+    } else {
+      return acc
+    }
+  }, [] as string[])
   const plugins : Array<WebpackPluginInstance> = []
   switch (task.targetType) {
     case 'HTML': {
@@ -134,12 +149,9 @@ function getPlugins(task : Task, project : ReactProjectData, coptions : Compiler
         template: project.index,
         inject: task.inlineJs ? 'body' : 'head',
         templateParameters: {
-          'hasStyle' : !task.inlineCss && project.styles.length > 0,
-          'hasKatex' : project.hasKatex,
-          'hasPrism' : project.hasPrism,
-          'katexCss' : coptions.katexCss,
-          'prismCss' : join(coptions.prismCss, project.prismStyle),
-          'customCss': project.styles.length > 0 ? basename(project.styles[0]) : ''
+          'stylesheets' : stylesheets,
+          'hasStyle'    : !task.inlineCss && project.styles.length > 0,
+          'customCss'   : project.styles.length > 0 ? basename(project.styles[0]) : ''
         }
       }))
       if (task.inlineJs) {
@@ -182,7 +194,7 @@ function getDevServerConfig(project : ReactProjectData) {
   }
 }
 
-function getConfiguration(task : Task, project : ReactProjectData, coptions : CompilerOptions, isDev : boolean) : Configuration {
+function getConfiguration(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<INamedDialectikPlugin>, isDev : boolean) : Configuration {
   return {
     context: project.dir,
     entry  : project.main,
@@ -210,8 +222,8 @@ function getConfiguration(task : Task, project : ReactProjectData, coptions : Co
         }),
       ],
     },
-    module : getModule(project, coptions),
-    plugins : getPlugins(task, project, coptions),
+    module : getModule(project, coptions, plugins),
+    plugins : getPlugins(task, project, coptions, plugins),
     externals: {
       "react": "React",
       "react-dom": "ReactDOM",
@@ -219,8 +231,8 @@ function getConfiguration(task : Task, project : ReactProjectData, coptions : Co
   }
 }
 
-export async function exec_webpack(task : Task, project : ReactProjectData, coptions : CompilerOptions) {
-  const config = getConfiguration(task, project, coptions, false)
+export async function exec_webpack(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<INamedDialectikPlugin>) {
+  const config = getConfiguration(task, project, coptions, plugins, false)
   //console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
@@ -248,7 +260,7 @@ export async function exec_webpack(task : Task, project : ReactProjectData, copt
 }
 
 export function start_webpack_dev(task : Task, project : ReactProjectData, coptions : CompilerOptions) {
-  const config = getConfiguration(task, project, coptions, true)
+  const config = getConfiguration(task, project, coptions, [], true)
   console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config);
   if (config.devServer && config.devServer.port && config.devServer.host) {
