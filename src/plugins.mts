@@ -9,9 +9,19 @@ export const loadPlugins = async (options: CompilerOptions) : Promise<Array<INam
   const packageJsonPath = join(options.wDir, 'package.json');
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
   if (packageJson?.dialectik?.plugins?.length !== undefined) {
-    const pluginPromises = packageJson.dialectik.plugins.map(async (pluginName : string) => {
+    const pluginPromises = packageJson.dialectik.plugins.map(async (pluginData : string | { name : string, arg : any }) => {
+      let pluginName = ""
+      let pluginArg = undefined
+      if (typeof pluginData === "string") {
+        pluginName = pluginData
+      } else if (pluginData.name !== undefined) {
+        pluginName = pluginData.name
+        pluginArg = pluginData.arg
+      } else {
+        throw new Error(`Invalid plugin data: ${JSON.stringify(pluginData, null, 2)}`)
+      }
       const pluginModule = await import(pluginName);
-      const pluginInstance: IDialectikPlugin = (pluginModule.PluginProvider as IPluginProvider).getPlugin();
+      const pluginInstance: IDialectikPlugin = (pluginModule.PluginProvider as IPluginProvider).getPlugin(pluginArg);
       return { ...pluginInstance, name: pluginName };
     });
     const plugins = await Promise.all(pluginPromises);
