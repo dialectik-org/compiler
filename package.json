@@ -49,7 +49,7 @@
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
     "@completium/archetype-prism": "^0.0.1",
-    "@dialectik/admonition-plugin": "^0.0.1",
+    "@dialectik/admonition-plugin": "^0.0.4",
     "@dialectik/katex-plugin": "^0.0.3",
     "@dialectik/plugin-interface": "^1.0.10",
     "@dialectik/prism-plugin": "^0.0.6",

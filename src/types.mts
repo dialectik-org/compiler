@@ -50,10 +50,11 @@ export class CompilerOptions {
     types         : string
   }
   reactTemplates  : Array<[ReactTemplateType, string]>
-  constructor(wd  : string, compilerdir : string) {
+  constructor(wd  : string, compilerdir : string, modulesDir ?: string) {
     this.wDir            = wd
     this.templateDir     = join(compilerdir, 'templates')
-    this.modulesDir      = compilerdir
+    // compiler dir is .../node_modules/@dialectik/compiler/build
+    this.modulesDir      = modulesDir ?? join(compilerdir, '..', '..', '..')
     this.htmlTemplate    = 'index.html'
     this.reactComponents = 'components.tsx'
     this.reactTemplates  = [
@@ -61,13 +62,13 @@ export class CompilerOptions {
       ['Multi',  'multi.tsx' ]
     ]
     this.modules         = {
-      babelLoader        : join(wd, "node_modules", "babel-loader"),
-      tsLoader           : join(wd, "node_modules", "ts-loader"),
-      styleLoader        : join(wd, "node_modules", "style-loader"),
-      cssLoader          : join(wd, "node_modules", "css-loader"),
-      mdxLoader          : join(wd, "node_modules", "@mdx-js/loader"),
-      fileLoader         : join(wd, "node_modules", "file-loader"),
-      types              : join(wd, 'node_modules', '@types')
+      babelLoader        : join(this.modulesDir, "babel-loader"),
+      tsLoader           : join(this.modulesDir, "ts-loader"),
+      styleLoader        : join(this.modulesDir, "style-loader"),
+      cssLoader          : join(this.modulesDir, "css-loader"),
+      mdxLoader          : join(this.modulesDir, "@mdx-js/loader"),
+      fileLoader         : join(this.modulesDir, "file-loader"),
+      types              : join(this.modulesDir, '@types')
     }
   }
   getReactTemplate(rtyp : ReactTemplateType) : string {

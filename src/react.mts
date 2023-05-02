@@ -140,7 +140,7 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
 const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<INamedDialectikPlugin>, coptions : CompilerOptions) => {
   plugins.forEach(plugin => {
     if (plugin.react !== undefined) {
-      const sourceDir = join(coptions.wDir, 'node_modules', plugin.name, 'lib', 'react')
+      const sourceDir = join(coptions.modulesDir, plugin.name, 'lib', 'react')
       const targetDir = join(tmp_project_dir, basename(plugin.name))
       console.log(`copy ${sourceDir} to ${targetDir}`)
       copyDirectorySync(sourceDir, targetDir)

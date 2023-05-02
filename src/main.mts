@@ -9,15 +9,15 @@ const __dirname = dirname(__filename);
 
 export { CompilerOptions, Task } from "./types.mjs";
 
-export const compile = async (t : Task, wd : string) => {
-  const coptions = new CompilerOptions(wd, __dirname);
+export const compile = async (t : Task, wd : string, md ?: string) => {
+  const coptions = new CompilerOptions(wd, __dirname, md);
   console.log(JSON.stringify(coptions, null, 2))
   const declared_plugins = await loadPlugins(coptions)
   await execute_task(t, declared_plugins, coptions)
 }
 
-export const start = async (t : Task, wd : string) => {
-  const coptions = new CompilerOptions(wd, __dirname);
+export const start = async (t : Task, wd : string, md ?: string) => {
+  const coptions = new CompilerOptions(wd, __dirname, md);
   console.log(JSON.stringify(coptions, null, 2))
   const declared_plugins = await loadPlugins(coptions)
   await start_server(t, declared_plugins, coptions)

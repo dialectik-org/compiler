@@ -207,7 +207,7 @@ function getConfiguration(task : Task, project : ReactProjectData, coptions : Co
     devServer:    isDev ? getDevServerConfig(project) : undefined,
     resolve : {
       extensions: ['.tsx', '...'],
-      modules:    [join(coptions.wDir, "node_modules"), "node_modules"],
+      modules:    [coptions.modulesDir, "node_modules"],
     },
     optimization: {
       minimize: true,
@@ -215,10 +215,10 @@ function getConfiguration(task : Task, project : ReactProjectData, coptions : Co
         new TerserPlugin({
           terserOptions: {
             format: {
-              comments: task.license, // This line will remove the license-related comments
+              comments: task.license === undefined ? false : task.license, // This line will remove the license-related comments
             },
           },
-          extractComments: task.license, // This line will prevent creating a separate file for license comments
+          extractComments: task.license === undefined ? false : task.license, // This line will prevent creating a separate file for license comments
         }),
       ],
     },
