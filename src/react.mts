@@ -9,7 +9,6 @@ import parse from 'remark-parse';
 import { Node, Parent } from 'unist';
 import { visit } from 'unist-util-visit';
 import { INamedDialectikPlugin } from './plugins.mjs';
-import { plugins } from 'prismjs';
 
 interface ImageNode extends Node {
   type: 'image';
@@ -140,10 +139,11 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
 const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<INamedDialectikPlugin>, coptions : CompilerOptions) => {
   plugins.forEach(plugin => {
     if (plugin.react !== undefined) {
-      const sourceDir = join(coptions.modulesDir, plugin.name, 'lib', 'react')
+      const sourceDir1 = join(coptions.modulesDir, plugin.name, 'lib', 'react')
+      const sourceDir2 = join(coptions.wDir, 'node_modules', plugin.name, 'lib', 'react')
       const targetDir = join(tmp_project_dir, basename(plugin.name))
-      console.log(`copy ${sourceDir} to ${targetDir}`)
-      copyDirectorySync(sourceDir, targetDir)
+      console.log(`copy ${sourceDir1} to ${targetDir}`)
+      copyDirectorySync([sourceDir1, sourceDir2], targetDir)
     }
   })
 }
@@ -193,7 +193,7 @@ export const create_react_project = (task : Task, plugins: Array<INamedDialectik
   if (task.components == 'Default') {
     copyFileSync(default_react_comps_path, react_comps_path_dest)
     // copy components css
-    copyDirectorySync(join(coptions.templateDir, 'css'), join(tmp_project_dir, 'css'))
+    copyDirectorySync([join(coptions.templateDir, 'css')], join(tmp_project_dir, 'css'))
   } else {
     throw new Error(`Non default components '${coptions.reactComponents}' not supported yet (task '${task_id}')`)
   }

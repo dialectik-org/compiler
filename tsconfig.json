@@ -20,6 +20,7 @@
     "declaration": true
   },
   "exclude": [
+    "build",
     "src/templates/*.tsx",
     "build/templates/*.tsx"
   ]
