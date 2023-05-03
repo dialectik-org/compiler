@@ -1,6 +1,6 @@
 import { H5PWebpackPlugin } from './plugins/webpack/h5pwebpackplugin.mjs'
 import { InjectExternalCssPlugin } from './plugins/webpack/injectstylewebpackplugin.mjs'
-import { CompilerOptions, ReactProjectData, Task } from './types.mjs'
+import { CompilerOptions, ReactProjectData, Task, Plugin } from './types.mjs'
 import { watch } from 'chokidar'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
 import { copyFileSync } from 'fs';
@@ -17,7 +17,6 @@ import webpack from 'webpack';
 import { Configuration as WebpackConfiguration, WebpackPluginInstance } from 'webpack';
 import webpackDevServer from 'webpack-dev-server'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
-import { INamedDialectikPlugin } from './plugins.mjs'
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -58,17 +57,17 @@ function watchAndCopySourceFiles(fileMappings: FileMapping[]): void {
   });
 }
 
-function getModule(project : ReactProjectData, coptions : CompilerOptions, required_plugins : Array<INamedDialectikPlugin>) {
+function getModule(project : ReactProjectData, coptions : CompilerOptions, required_plugins : Array<Plugin>) {
   const required_remark_plugins = required_plugins.reduce((acc, plugin) => {
-    if (plugin.remarkPlugins !== undefined) {
-      return acc.concat([plugin.remarkPlugins])
+    if (plugin.data.remarkPlugins !== undefined) {
+      return acc.concat([plugin.data.remarkPlugins])
     } else {
       return acc
     }
   }, [] as Array<any>)
   const required_rehype_plugins = required_plugins.reduce((acc, plugin) => {
-    if (plugin.rehypePlugins !== undefined) {
-      return acc.concat([plugin.rehypePlugins])
+    if (plugin.data.rehypePlugins !== undefined) {
+      return acc.concat([plugin.data.rehypePlugins])
     } else {
       return acc
     }
@@ -131,10 +130,10 @@ function getModule(project : ReactProjectData, coptions : CompilerOptions, requi
   }
 }
 
-function getPlugins(task : Task, project : ReactProjectData, coptions : CompilerOptions, dialectik_plugins : Array<INamedDialectikPlugin>) : Array<WebpackPluginInstance> {
+function getPlugins(task : Task, project : ReactProjectData, coptions : CompilerOptions, dialectik_plugins : Array<Plugin>) : Array<WebpackPluginInstance> {
   const stylesheets = dialectik_plugins.reduce((acc, plugin) => {
-    if (plugin.stylesheets !== undefined) {
-      return acc.concat(plugin.stylesheets)
+    if (plugin.data.stylesheets !== undefined) {
+      return acc.concat(plugin.data.stylesheets)
     } else {
       return acc
     }
@@ -193,7 +192,7 @@ function getDevServerConfig(project : ReactProjectData) {
   }
 }
 
-function getConfiguration(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<INamedDialectikPlugin>, isDev : boolean) : Configuration {
+function getConfiguration(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<Plugin>, isDev : boolean) : Configuration {
   return {
     context: project.dir,
     entry  : project.main,
@@ -230,7 +229,7 @@ function getConfiguration(task : Task, project : ReactProjectData, coptions : Co
   }
 }
 
-export async function exec_webpack(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<INamedDialectikPlugin>) {
+export async function exec_webpack(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<Plugin>) {
   const config = getConfiguration(task, project, coptions, plugins, false)
   //console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config)
@@ -258,7 +257,7 @@ export async function exec_webpack(task : Task, project : ReactProjectData, copt
   });
 }
 
-export function start_webpack_dev(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<INamedDialectikPlugin>) {
+export function start_webpack_dev(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<Plugin>) {
   const config = getConfiguration(task, project, coptions, plugins, true)
   console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config);

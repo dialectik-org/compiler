@@ -1,11 +1,14 @@
 import { join, resolve } from 'path';
 import { readFileSync, existsSync } from 'fs';
-import { CompilerOptions, Task } from './types.mjs';
+import { CompilerOptions, Plugin, Task } from './types.mjs';
 import { IDialectikPlugin, IPluginProvider } from '@dialectik/plugin-interface'
 
-export type INamedDialectikPlugin = IDialectikPlugin & { name : string }
+interface moduleData {
+  url : URL,
+  dir : string,
+}
 
-function resolveModulePath(moduleName : string, directories : string[]) {
+function resolveModulePath(moduleName : string, directories : string[]) : moduleData {
   for (const directory of directories) {
     const moduleFolder = join(directory, moduleName);
     try {
@@ -15,7 +18,10 @@ function resolveModulePath(moduleName : string, directories : string[]) {
         const mainFile = packageJson.main || 'index.js';
         const modulePath = join(moduleFolder, mainFile);
         if (existsSync(modulePath)) {
-          return pathToFileURL(modulePath);
+          return {
+            url : pathToFileURL(modulePath),
+            dir : moduleFolder,
+          }
         }
       }
     } catch (error) {
@@ -29,12 +35,11 @@ function pathToFileURL(filePath : string) {
   return new URL(`file://${resolve(filePath)}`);
 }
 
-
-export const loadPlugins = async (options: CompilerOptions) : Promise<Array<INamedDialectikPlugin>> => {
-  const packageJsonPath = join(options.wDir, 'package.json');
+export const loadPlugins = async (options: CompilerOptions) : Promise<Array<Plugin>> => {
+  const packageJsonPath = join(options.wDir, 'dialectik.json');
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  if (packageJson?.dialectik?.plugins?.length !== undefined) {
-    const pluginPromises = packageJson.dialectik.plugins.map(async (pluginData : string | { name : string, arg : any }) => {
+  if (packageJson?.plugins?.length !== undefined) {
+    const pluginPromises : Array<Promise<Plugin>> = packageJson.plugins.map(async (pluginData : string | { name : string, arg : any }) : Promise<Plugin> => {
       let pluginName = ""
       let pluginArg = undefined
       if (typeof pluginData === "string") {
@@ -50,10 +55,14 @@ export const loadPlugins = async (options: CompilerOptions) : Promise<Array<INam
         join(options.wDir, 'node_modules'),
       ];
 
-      const myModuleUrl = resolveModulePath(pluginName, directories);
-      const pluginModule = await import(myModuleUrl.href);
+      const myModuleData = resolveModulePath(pluginName, directories);
+      const pluginModule = await import(myModuleData.url.href);
       const pluginInstance: IDialectikPlugin = (pluginModule.PluginProvider as IPluginProvider).getPlugin(pluginArg);
-      return { ...pluginInstance, name: pluginName };
+      return {
+        name : pluginName,
+        data : pluginInstance,
+        dir  : myModuleData.dir,
+      }
     });
     const plugins = await Promise.all(pluginPromises);
     return plugins;
@@ -62,19 +71,19 @@ export const loadPlugins = async (options: CompilerOptions) : Promise<Array<INam
   return []
 };
 
-export const getRequiredPlugins = (task : Task, plugins : Array<INamedDialectikPlugin>, coptions : CompilerOptions) : Array<INamedDialectikPlugin> => {
+export const getRequiredPlugins = (task : Task, plugins : Array<Plugin>, coptions : CompilerOptions) : Array<Plugin> => {
   if (task.sources.length == 1) {
     const content              = task.sources[0]
     const content_dir          = join(coptions.wDir, task.contentDirSuffix ?? '')
     const content_path         = join(content_dir, content)
     const fileContent = readFileSync(content_path, 'utf-8');
     return plugins.reduce((acc, plugin) => {
-      if (plugin.isRequired(fileContent)) {
+      if (plugin.data.isRequired(fileContent)) {
         return acc.concat([plugin])
       } else {
         return acc
       }
-    }, [] as Array<INamedDialectikPlugin>)
+    }, [] as Array<Plugin>)
   } else {
     throw new Error(`Multi sources not supported (task '${task.id}')`)
   }

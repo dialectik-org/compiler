@@ -1,4 +1,4 @@
-import { CompilerOptions, ReactProjectData, ReactTemplateType, Task } from './types.mjs'
+import { CompilerOptions, ReactProjectData, ReactTemplateType, Task, Plugin } from './types.mjs'
 import { copyFileSync, mkdirSync } from 'fs'
 import { tmpdir } from 'os';
 import { basename, dirname, join } from 'path'
@@ -8,7 +8,6 @@ import { remark } from 'remark';
 import parse from 'remark-parse';
 import { Node, Parent } from 'unist';
 import { visit } from 'unist-util-visit';
-import { INamedDialectikPlugin } from './plugins.mjs';
 
 interface ImageNode extends Node {
   type: 'image';
@@ -79,16 +78,16 @@ function formatString(input: string): string {
   return formatted;
 }
 
-function getComponentName(plugin : INamedDialectikPlugin) {
-  return capitalize(formatString(plugin.name)) + (plugin.react ? plugin.react.componentname : '')
+function getComponentName(plugin : Plugin) {
+  return capitalize(formatString(plugin.name)) + (plugin.data.react ? plugin.data.react.componentname : '')
 }
 
-const generateImports = (plugins: Array<INamedDialectikPlugin>) : string => {
+const generateImports = (plugins: Array<Plugin>) : string => {
   const imports : string[] = plugins.reduce((acc, plugin) => {
-    if (plugin.react !== undefined) {
+    if (plugin.data.react !== undefined) {
       const componentName = getComponentName(plugin)
       return acc.concat([
-        "import { " + plugin.react.componentname + " as " +  componentName + " } from './" + basename(plugin.name) + "/component'"
+        "import { " + plugin.data.react.componentname + " as " +  componentName + " } from './" + basename(plugin.name) + "/component'"
       ])
     } else {
       return acc
@@ -97,12 +96,12 @@ const generateImports = (plugins: Array<INamedDialectikPlugin>) : string => {
   return imports.join('\n')
 }
 
-const generateComponents = (plugins: Array<INamedDialectikPlugin>) : string => {
+const generateComponents = (plugins: Array<Plugin>) : string => {
   const components : string[] = plugins.reduce((acc, plugin) => {
-    if (plugin.react !== undefined) {
+    if (plugin.data.react !== undefined) {
       const componentName = getComponentName(plugin)
       return acc.concat([
-        plugin.react.tagname + " : " +  componentName
+        plugin.data.react.tagname + " : " +  componentName
       ])
     } else {
       return acc
@@ -111,7 +110,7 @@ const generateComponents = (plugins: Array<INamedDialectikPlugin>) : string => {
   return '{ ' + components.join(', ') + ' }'
 }
 
-const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Array<INamedDialectikPlugin>) => {
+const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Array<Plugin>) => {
   // Read the template file
   const template = readFileSync(inputFilePath, 'utf-8');
 
@@ -136,14 +135,13 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
   }
 }
 
-const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<INamedDialectikPlugin>, coptions : CompilerOptions) => {
+const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<Plugin>, coptions : CompilerOptions) => {
   plugins.forEach(plugin => {
-    if (plugin.react !== undefined) {
-      const sourceDir1 = join(coptions.modulesDir, plugin.name, 'lib', 'react')
-      const sourceDir2 = join(coptions.wDir, 'node_modules', plugin.name, 'lib', 'react')
+    if (plugin.data.react !== undefined) {
+      const sourceDir = join(plugin.dir, 'lib', 'react')
       const targetDir = join(tmp_project_dir, basename(plugin.name))
-      console.log(`copy ${sourceDir1} to ${targetDir}`)
-      copyDirectorySync([sourceDir1, sourceDir2], targetDir)
+      console.log(`copy ${sourceDir} to ${targetDir}`)
+      copyDirectorySync(sourceDir, targetDir)
     }
   })
 }
@@ -156,7 +154,7 @@ const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<INamedDi
  * @param coptions compiler options
  * @returns        TmpProject data
  */
-export const create_react_project = (task : Task, plugins: Array<INamedDialectikPlugin>, coptions : CompilerOptions) : ReactProjectData => {
+export const create_react_project = (task : Task, plugins: Array<Plugin>, coptions : CompilerOptions) : ReactProjectData => {
   const task_id                  = getId(task)
   const tmp_project_dir          = task.tmpDir ? join(coptions.wDir, task.tmpDir, task_id) : join(tmpdir(), task_id);
   const react_template           = coptions.getReactTemplate(get_react_template_type(task.sources))
@@ -193,7 +191,7 @@ export const create_react_project = (task : Task, plugins: Array<INamedDialectik
   if (task.components == 'Default') {
     copyFileSync(default_react_comps_path, react_comps_path_dest)
     // copy components css
-    copyDirectorySync([join(coptions.templateDir, 'css')], join(tmp_project_dir, 'css'))
+    copyDirectorySync(join(coptions.templateDir, 'css'), join(tmp_project_dir, 'css'))
   } else {
     throw new Error(`Non default components '${coptions.reactComponents}' not supported yet (task '${task_id}')`)
   }

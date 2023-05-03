@@ -1,3 +1,4 @@
+import { IDialectikPlugin } from '@dialectik/plugin-interface'
 import { dirname, join } from 'path'
 
 export type ReactTemplateType = 'Single' | 'Multi'
@@ -13,7 +14,6 @@ export interface Task {
   components       : string | undefined,
   prismStyle       : string | undefined,
   externalStyle    : boolean,
-  static           : boolean,
   inlineCss        : boolean,
   inlineImage      : boolean,
   inlineJs         : boolean,
@@ -34,6 +34,12 @@ export interface ReactProjectData {
   watch          : Array<{ from : string, to : string  }>
 }
 
+export interface Plugin {
+  name : string,
+  data : IDialectikPlugin,
+  dir  : string,
+}
+
 export class CompilerOptions {
   wDir            : string
   templateDir     : string
@@ -49,6 +55,7 @@ export class CompilerOptions {
     fileLoader    : string,
     types         : string
   }
+  plugins         : Plugin[]
   reactTemplates  : Array<[ReactTemplateType, string]>
   constructor(wd  : string, compilerdir : string, modulesDir ?: string) {
     this.wDir            = wd
@@ -70,6 +77,7 @@ export class CompilerOptions {
       fileLoader         : join(this.modulesDir, "file-loader"),
       types              : join(this.modulesDir, '@types')
     }
+    this.plugins         = []
   }
   getReactTemplate(rtyp : ReactTemplateType) : string {
     for(var i=0; i<this.reactTemplates.length; i++) {
@@ -78,5 +86,8 @@ export class CompilerOptions {
       }
     }
     throw new Error(`getReactTemplate: unknown type ${rtyp}`)
+  }
+  setPlugins(plugins : Plugin[]) {
+    this.plugins = plugins
   }
 }

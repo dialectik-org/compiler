@@ -11,14 +11,14 @@ export { CompilerOptions, Task } from "./types.mjs";
 
 export const compile = async (t : Task, wd : string, md ?: string) => {
   const coptions = new CompilerOptions(wd, __dirname, md);
+  coptions.setPlugins(await loadPlugins(coptions))
   console.log(JSON.stringify(coptions, null, 2))
-  const declared_plugins = await loadPlugins(coptions)
-  await execute_task(t, declared_plugins, coptions)
+  await execute_task(t, coptions)
 }
 
 export const start = async (t : Task, wd : string, md ?: string) => {
   const coptions = new CompilerOptions(wd, __dirname, md);
+  coptions.setPlugins(await loadPlugins(coptions))
   console.log(JSON.stringify(coptions, null, 2))
-  const declared_plugins = await loadPlugins(coptions)
-  await start_server(t, declared_plugins, coptions)
+  await start_server(t, coptions)
 }
