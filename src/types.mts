@@ -1,14 +1,15 @@
 import { IDialectikPlugin } from '@dialectik/plugin-interface'
-import { dirname, join } from 'path'
+import { join } from 'path'
+import { readFileSync } from 'fs'
 
 export type ReactTemplateType = 'Single' | 'Multi'
 
 export interface Task {
   id               : string | undefined,
+  title            : string | undefined,
   contentDirSuffix : string | undefined,
   targetType       : 'HTML' | 'H5P',
   targetDir        : string | undefined,
-  tmpDir           : string | undefined,
   sources          : string[],  // paths relative to contentDirSuffix
   styles           : string[],  // paths relative to contentDirSuffix
   components       : string | undefined,
@@ -40,8 +41,23 @@ export interface Plugin {
   dir  : string,
 }
 
+export interface Settings {
+  compilerOptions ?: {
+    moduleDir ?: string
+    tmpDir    ?: string
+  },
+  plugins ?: Array< string | { name : string, arg : any } >
+}
+
+function loadSettings(wd : string) : Settings {
+  const settingsJsonPath = join(wd, 'dialectik.json');
+  const settingsJson = JSON.parse(readFileSync(settingsJsonPath, 'utf-8'));
+  return settingsJson
+}
+
 export class CompilerOptions {
   wDir            : string
+  settings        : Settings
   templateDir     : string
   modulesDir      : string
   htmlTemplate    : string
@@ -57,11 +73,12 @@ export class CompilerOptions {
   }
   plugins         : Plugin[]
   reactTemplates  : Array<[ReactTemplateType, string]>
-  constructor(wd  : string, compilerdir : string, modulesDir ?: string) {
+  constructor(wd  : string, compilerdir : string) {
     this.wDir            = wd
+    this.settings        = loadSettings(wd)
     this.templateDir     = join(compilerdir, 'templates')
     // compiler dir is .../node_modules/@dialectik/compiler/build
-    this.modulesDir      = modulesDir ?? join(compilerdir, '..', '..', '..')
+    this.modulesDir      = this.settings.compilerOptions?.moduleDir ?? join(compilerdir, '..', '..', '..')
     this.htmlTemplate    = 'index.html'
     this.reactComponents = 'components.tsx'
     this.reactTemplates  = [

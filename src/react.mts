@@ -56,8 +56,8 @@ const getTargetDir = (base : string, id : string, task : Task) => {
 
 const getDefaultTargetDir = (task : Task, id : string, coptions : CompilerOptions) => {
   const base = join(coptions.wDir, task.contentDirSuffix ?? '', dirname(task.sources[0]))
-  console.log(`base, id: ${base}, ${id}`)
-  console.log(`is bundled: ${isBundled(task)}`)
+  //console.log(`base, id: ${base}, ${id}`)
+  //console.log(`is bundled: ${isBundled(task)}`)
   return getTargetDir(base, id, task)
 }
 
@@ -119,7 +119,7 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
     imports: generateImports(plugins),
     components: generateComponents(plugins),
   };
-  console.log(JSON.stringify(values, null, 2))
+  //console.log(JSON.stringify(values, null, 2))
 
   // Replace the placeholders with the actual values
   const generatedCode = template.replace(/\[\[(\w+)\]\]/gi, (match, variableName : string) => {
@@ -129,7 +129,7 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
   // Write the generated code to a new file
   try {
     writeFileSync(outputFilePath, generatedCode, 'utf8');
-    console.log(`Generated code was successfully written to ${outputFilePath}`);
+    console.log(`Generated code was successfully written to temporay directory`);
   } catch (error) {
     console.error(`Error writing generated code to ${outputFilePath}:`, error);
   }
@@ -140,7 +140,7 @@ const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<Plugin>,
     if (plugin.data.react !== undefined) {
       const sourceDir = join(plugin.dir, 'lib', 'react')
       const targetDir = join(tmp_project_dir, basename(plugin.name))
-      console.log(`copy ${sourceDir} to ${targetDir}`)
+      //console.log(`copy ${sourceDir} to ${targetDir}`)
       copyDirectorySync(sourceDir, targetDir)
     }
   })
@@ -156,7 +156,7 @@ const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<Plugin>,
  */
 export const create_react_project = (task : Task, plugins: Array<Plugin>, coptions : CompilerOptions) : ReactProjectData => {
   const task_id                  = getId(task)
-  const tmp_project_dir          = task.tmpDir ? join(coptions.wDir, task.tmpDir, task_id) : join(tmpdir(), task_id);
+  const tmp_project_dir          = coptions.settings?.compilerOptions?.tmpDir ? join(coptions.wDir, coptions.settings?.compilerOptions?.tmpDir, task_id) : join(tmpdir(), task_id);
   const react_template           = coptions.getReactTemplate(get_react_template_type(task.sources))
   const react_template_path      = join(coptions.templateDir, react_template)
   const react_template_path_dest = join(tmp_project_dir, react_template)
@@ -211,7 +211,7 @@ export const create_react_project = (task : Task, plugins: Array<Plugin>, coptio
   copyFileSync(join(coptions.templateDir, 'tsconfig.json'), join(tmp_project_dir, 'tsconfig.json'))
   copyFileSync(join(coptions.templateDir, 'react-app-env.d.ts'), join(tmp_project_dir, 'react-app-env.d.ts'))
   return {
-    title         : task_id,
+    title         : task.title ?? task_id,
     dir           : tmp_project_dir,            // path to tmp project
     targetDir     : target_dir,
     targetName    : isBundled(task) ? lowerFirstLetter(task_id) + '.html' : 'index.html',

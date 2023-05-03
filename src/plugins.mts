@@ -36,10 +36,8 @@ function pathToFileURL(filePath : string) {
 }
 
 export const loadPlugins = async (options: CompilerOptions) : Promise<Array<Plugin>> => {
-  const packageJsonPath = join(options.wDir, 'dialectik.json');
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  if (packageJson?.plugins?.length !== undefined) {
-    const pluginPromises : Array<Promise<Plugin>> = packageJson.plugins.map(async (pluginData : string | { name : string, arg : any }) : Promise<Plugin> => {
+  if (options.settings?.plugins?.length !== undefined) {
+    const pluginPromises : Array<Promise<Plugin>> = options.settings.plugins.map(async (pluginData : string | { name : string, arg : any }) : Promise<Plugin> => {
       let pluginName = ""
       let pluginArg = undefined
       if (typeof pluginData === "string") {
