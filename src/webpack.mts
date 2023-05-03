@@ -259,7 +259,7 @@ export async function exec_webpack(task : Task, project : ReactProjectData, copt
 
 export function start_webpack_dev(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<Plugin>) {
   const config = getConfiguration(task, project, coptions, plugins, true)
-  console.log(JSON.stringify(config, null, 2))
+  //console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config);
   if (config.devServer && config.devServer.port && config.devServer.host) {
     const server = new webpackDevServer(config.devServer, compiler);
