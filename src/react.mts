@@ -218,6 +218,7 @@ export const create_react_project = (task : Task, plugins: Array<Plugin>, coptio
   copyFileSync(join(coptions.templateDir, 'tsconfig.json'), join(tmp_project_dir, 'tsconfig.json'))
   copyFileSync(join(coptions.templateDir, 'react-app-env.d.ts'), join(tmp_project_dir, 'react-app-env.d.ts'))
   return {
+    id            : task_id,
     title         : task.title ?? task_id,
     dir           : tmp_project_dir,            // path to tmp project
     targetDir     : target_dir,

@@ -120,7 +120,7 @@ export class H5PWebpackPlugin {
           writeFileSync(h5pJsonPath, JSON.stringify(h5pjsonContent));
 
           // Create a zip archive
-          const zipOutput = join(this.project.dir, this.project.title + '.h5p')
+          const zipOutput = join(this.project.dir, this.project.id + '.h5p')
           const archive = archiver('zip', { zlib: { level: 9 } });
           const output = createWriteStream(zipOutput);
 
@@ -146,7 +146,7 @@ export class H5PWebpackPlugin {
           const zipBuffer = readFileSync(zipOutput);
 
           // Add the zip file to the compilation assets
-          compilation.emitAsset(lowerFirstLetter(this.project.title) + '.h5p', new BinarySource(zipBuffer));
+          compilation.emitAsset(lowerFirstLetter(this.project.id) + '.h5p', new BinarySource(zipBuffer));
         }
       );
       // Remove the generated JS file after emitting the zip file

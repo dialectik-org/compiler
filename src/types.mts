@@ -22,6 +22,7 @@ export interface Task {
 }
 
 export interface ReactProjectData {
+  id            : string,
   title         : string,
   dir           : string,   // path to tmp project
   targetDir     : string    // directory for generation
