@@ -1,9 +1,9 @@
-import { CompilerOptions, ReactProjectData, ReactTemplateType, Task, Plugin } from './types.mjs'
+import { capitalize, copyDirectorySync, getFilenameWithoutExtension, isOnlineUrl, lowerFirstLetter, mkOrCleanDir } from './fsutils.mjs'
+import { CompilerOptions, Plugin, ReactProjectData, ReactTemplateType, Task } from './types.mjs'
 import { copyFileSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, dirname, join } from 'path'
-import { copyDirectorySync, mkOrCleanDir, capitalize, lowerFirstLetter, getFilenameWithoutExtension, isOnlineUrl } from './fsutils.mjs'
-import { readFileSync, writeFileSync } from 'fs';
 import { remark } from 'remark';
 import parse from 'remark-parse';
 import { Node, Parent } from 'unist';
@@ -14,28 +14,34 @@ interface ImageNode extends Node {
   url: string;
 }
 
-interface ImageNode extends Node {
-  type: 'image';
-  url: string;
-}
-
 function isImageNode(node: Node): node is ImageNode {
   return node.type === 'image' && typeof (node as ImageNode).url === 'string';
 }
 
-function extractImageUrlsSync(filePath: string): string[] {
+function extractLocalResourcesSync(filePath: string): string[] {
   const fileContent = readFileSync(filePath, 'utf-8');
+
   const tree = remark().use(parse).parse(fileContent) as Parent;
 
-  const imageUrls: string[] = [];
+  const localResources: string[] = [];
 
   visit(tree, isImageNode, (node: ImageNode) => {
     if(!isOnlineUrl(node.url)) {
-      imageUrls.push(node.url);
+      localResources.push(node.url);
     }
   });
 
-  return imageUrls;
+  // Extract import sources
+  const importRegex = /^import([ \t]*(?:[^ \t\{\}]+[ \t]*,?)?(?:[ \t]*\{(?:[ \t]*[^ \t"'\{\}]+[ \t]*,?)+\})?[ \t]*)from[ \t]*(['"])([^'"]+)(?:['"])/gm;
+
+  let match;
+  while ((match = importRegex.exec(fileContent)) !== null) {
+    const importSource = match[3];
+    if (!isOnlineUrl(importSource)) {
+      localResources.push(importSource);
+    }
+  }
+  return localResources;
 }
 
 const get_react_template_type = (srcs : string[]) : ReactTemplateType => {
@@ -174,13 +180,14 @@ export const create_react_project = (task : Task, plugins: Array<Plugin>, coptio
     const content_path_dest    = join(tmp_project_dir, 'content.md')
     watch.push({ from : content_path, to : content_path_dest })
     copyFileSync(content_path, content_path_dest)
-    const imageUrls = extractImageUrlsSync(content_path)
-    imageUrls.forEach(url => {
-      const target_image_dir = join(tmp_project_dir, dirname(url))
-      mkdirSync(target_image_dir, { recursive: true })
-      const source_image_path = join(dirname(content_path), url)
-      const target_image_path = join(tmp_project_dir, url)
-      copyFileSync(source_image_path, target_image_path)
+    const localResources = extractLocalResourcesSync(content_path)
+    localResources.forEach(url => {
+      const target_resource_dir = join(tmp_project_dir, dirname(url))
+      mkdirSync(target_resource_dir, { recursive: true })
+      const source_resource_path = join(dirname(content_path), url)
+      const target_resource_path = join(tmp_project_dir, url)
+      copyFileSync(source_resource_path, target_resource_path)
+      watch.push({ from : source_resource_path, to : target_resource_path })
     })
   } else {
     throw new Error(`Multi sources not supported (task '${task_id}')`)
