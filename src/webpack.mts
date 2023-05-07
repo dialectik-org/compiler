@@ -1,12 +1,12 @@
 import { H5PWebpackPlugin } from './plugins/webpack/h5pwebpackplugin.mjs'
 import { InjectExternalCssPlugin } from './plugins/webpack/injectstylewebpackplugin.mjs'
-import { CompilerOptions, ReactProjectData, Task, Plugin } from './types.mjs'
+import { CompilerOptions, Plugin, ReactProjectData, Task } from './types.mjs'
 import { watch } from 'chokidar'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
 import { copyFileSync } from 'fs';
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
-import { basename, join } from 'path'
+import { basename, dirname, join } from 'path'
 import rehypeSlug from 'rehype-slug';
 import remarkEmbedImages from 'remark-embed-images'
 import remarkFrontmatter from 'remark-frontmatter';
@@ -17,6 +17,8 @@ import webpack from 'webpack';
 import { Configuration as WebpackConfiguration, WebpackPluginInstance } from 'webpack';
 import webpackDevServer from 'webpack-dev-server'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
+import { writeFileSync } from 'fs'
+
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -131,6 +133,13 @@ function getModule(project : ReactProjectData, coptions : CompilerOptions, requi
 }
 
 function getPlugins(task : Task, project : ReactProjectData, coptions : CompilerOptions, dialectik_plugins : Array<Plugin>) : Array<WebpackPluginInstance> {
+  const scripts = dialectik_plugins.reduce((acc, plugin) => {
+    if (plugin.data.scripts !== undefined) {
+      return acc.concat(plugin.data.scripts)
+    } else {
+      return acc
+    }
+  }, [] as string[])
   const stylesheets = dialectik_plugins.reduce((acc, plugin) => {
     if (plugin.data.stylesheets !== undefined) {
       return acc.concat(plugin.data.stylesheets)
@@ -147,6 +156,7 @@ function getPlugins(task : Task, project : ReactProjectData, coptions : Compiler
         template: project.index,
         inject: task.inlineJs ? 'body' : 'head',
         templateParameters: {
+          'scripts'     : scripts,
           'stylesheets' : stylesheets,
           'hasStyle'    : !task.inlineCss && project.styles.length > 0,
           'customCss'   : project.styles.length > 0 ? basename(project.styles[0]) : ''
@@ -225,13 +235,17 @@ function getConfiguration(task : Task, project : ReactProjectData, coptions : Co
     externals: {
       "react": "React",
       "react-dom": "ReactDOM",
-    },
+      '@chakra-ui/react': 'ChakraUIReact',
+      '@emotion/react': 'EmotionReact',
+      '@emotion/styled': 'EmotionStyled',
+      '@chakra-ui/theme': 'ChakraUITheme',
+      '@chakra-ui/styled-system': 'ChakraUIStyledSystem',
+    }
   }
 }
 
 export async function exec_webpack(task : Task, project : ReactProjectData, coptions : CompilerOptions, plugins : Array<Plugin>) {
   const config = getConfiguration(task, project, coptions, plugins, false)
-  //console.log(JSON.stringify(config, null, 2))
   const compiler = webpack(config)
   await compiler.run((err, stats) => {
     if (err) {

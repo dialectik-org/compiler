@@ -1,8 +1,8 @@
 import { IDialectikPlugin } from '@dialectik/plugin-interface'
-import { join } from 'path'
 import { readFileSync } from 'fs'
+import { join } from 'path'
 
-export type ReactTemplateType = 'Single' | 'Multi'
+export type ReactTemplateType = 'Basic' | 'Chakra'
 
 export interface Task {
   id               : string | undefined,
@@ -33,7 +33,7 @@ export interface ReactProjectData {
   externalStyle : boolean,
   prismStyle    : string,
   hasPrism      : boolean,
-  watch          : Array<{ from : string, to : string  }>
+  watch         : Array<{ from : string, to : string  }>
 }
 
 export interface Plugin {
@@ -83,8 +83,8 @@ export class CompilerOptions {
     this.htmlTemplate    = 'index.html'
     this.reactComponents = 'components.tsx'
     this.reactTemplates  = [
-      ['Single', 'single.tsx'],
-      ['Multi',  'multi.tsx' ]
+      ['Basic', 'basic.tsx'],
+      ['Chakra', 'chakra.tsx'],
     ]
     this.modules         = {
       babelLoader        : join(this.modulesDir, "babel-loader"),
@@ -96,14 +96,6 @@ export class CompilerOptions {
       types              : join(this.modulesDir, '@types')
     }
     this.plugins         = []
-  }
-  getReactTemplate(rtyp : ReactTemplateType) : string {
-    for(var i=0; i<this.reactTemplates.length; i++) {
-      if (this.reactTemplates[i][0] == rtyp) {
-        return this.reactTemplates[i][1]
-      }
-    }
-    throw new Error(`getReactTemplate: unknown type ${rtyp}`)
   }
   setPlugins(plugins : Plugin[]) {
     this.plugins = plugins

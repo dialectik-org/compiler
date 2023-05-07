@@ -44,14 +44,6 @@ function extractLocalResourcesSync(filePath: string): string[] {
   return localResources;
 }
 
-const get_react_template_type = (srcs : string[]) : ReactTemplateType => {
-  if(srcs.length > 1) {
-    return 'Multi'
-  } else {
-    return 'Single'
-  }
-}
-
 const isBundled = (task : Task) => {
   return task.inlineCss && task.inlineJs && task.inlineImage && !task.externalStyle
 }
@@ -85,15 +77,15 @@ function formatString(input: string): string {
 }
 
 function getComponentName(plugin : Plugin) {
-  return capitalize(formatString(plugin.name)) + (plugin.data.react ? plugin.data.react.componentname : '')
+  return capitalize(formatString(plugin.name)) + 'GetComponents'
 }
 
 const generateImports = (plugins: Array<Plugin>) : string => {
   const imports : string[] = plugins.reduce((acc, plugin) => {
-    if (plugin.data.react !== undefined) {
+    if (plugin.data.withComponents) {
       const componentName = getComponentName(plugin)
       return acc.concat([
-        "import { " + plugin.data.react.componentname + " as " +  componentName + " } from './" + basename(plugin.name) + "/component'"
+        "import { getComponents as " +  componentName + " } from './" + basename(plugin.name) + "/components'"
       ])
     } else {
       return acc
@@ -104,16 +96,14 @@ const generateImports = (plugins: Array<Plugin>) : string => {
 
 const generateComponents = (plugins: Array<Plugin>) : string => {
   const components : string[] = plugins.reduce((acc, plugin) => {
-    if (plugin.data.react !== undefined) {
+    if (plugin.data.withComponents) {
       const componentName = getComponentName(plugin)
-      return acc.concat([
-        plugin.data.react.tagname + " : " +  componentName
-      ])
+      return acc.concat(['...' + componentName + '()'])
     } else {
       return acc
     }
   }, [] as string[])
-  return '{ ' + components.join(', ') + ' }'
+  return '{ ' + components.join(', \n\t') + ' }'
 }
 
 const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Array<Plugin>) => {
@@ -123,7 +113,7 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
   // Define the values to replace the placeholders
   const values : { [key:string]: string } = {
     imports: generateImports(plugins),
-    components: generateComponents(plugins),
+    getcomponents: generateComponents(plugins),
   };
   //console.log(JSON.stringify(values, null, 2))
 
@@ -143,13 +133,26 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
 
 const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<Plugin>, coptions : CompilerOptions) => {
   plugins.forEach(plugin => {
-    if (plugin.data.react !== undefined) {
+    if (plugin.data.withComponents !== undefined) {
       const sourceDir = join(plugin.dir, 'lib', 'react')
       const targetDir = join(tmp_project_dir, basename(plugin.name))
       //console.log(`copy ${sourceDir} to ${targetDir}`)
       copyDirectorySync(sourceDir, targetDir)
     }
   })
+}
+
+function getReactMain(plugins : Array<Plugin>) : string {
+  const main : string = plugins.reduce((acc, plugin) => {
+    if (plugin.data.withMain) {
+      return join(plugin.dir, 'lib', 'react', 'main.tsx')
+    } else {
+      return acc
+    }
+  }, "")
+  if (main !== "") {
+    return main
+  } else throw new Error("No React main provided by any plugin")
 }
 
 /**
@@ -163,9 +166,8 @@ const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<Plugin>,
 export const create_react_project = (task : Task, plugins: Array<Plugin>, coptions : CompilerOptions) : ReactProjectData => {
   const task_id                  = getId(task)
   const tmp_project_dir          = coptions.settings?.compilerOptions?.tmpDir ? join(coptions.wDir, coptions.settings?.compilerOptions?.tmpDir, task_id) : join(tmpdir(), task_id);
-  const react_template           = coptions.getReactTemplate(get_react_template_type(task.sources))
-  const react_template_path      = join(coptions.templateDir, react_template)
-  const react_template_path_dest = join(tmp_project_dir, react_template)
+  const react_main               = getReactMain(plugins)
+  const react_template_path_dest = join(tmp_project_dir, 'main.tsx')
   const default_react_comps_path = join(coptions.templateDir, coptions.reactComponents)
   const react_comps_path_dest    = join(tmp_project_dir, coptions.reactComponents)
   const index_html_path          = join(coptions.templateDir, coptions.htmlTemplate)
@@ -193,7 +195,7 @@ export const create_react_project = (task : Task, plugins: Array<Plugin>, coptio
     throw new Error(`Multi sources not supported (task '${task_id}')`)
   }
   copyPluginsComponent(tmp_project_dir, plugins, coptions)
-  generateMain(react_template_path, react_template_path_dest, plugins)
+  generateMain(react_main, react_template_path_dest, plugins)
   copyFileSync(index_html_path, index_html_path_dest)
   if (task.components == 'Default') {
     copyFileSync(default_react_comps_path, react_comps_path_dest)

@@ -1,5 +1,5 @@
 @import './vars.css';
-
+/*
 table {
   border-collapse: collapse;
   width: 100%;
@@ -27,3 +27,4 @@ tr:nth-child(even) {
 tr:hover {
   background-color: var(--table-hover-color);
 }
+*/
