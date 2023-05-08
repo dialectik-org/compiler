@@ -46,8 +46,13 @@ export interface Settings {
   compilerOptions ?: {
     moduleDir ?: string
     tmpDir    ?: string
+    chain     ?: string
   },
-  plugins ?: Array< string | { name : string, arg : any } >
+  chains ?: {
+    [key : string] : {
+      plugins ?: Array< string | { name : string, arg : any } >
+    }
+  }
 }
 
 function loadSettings(wd : string) : Settings {

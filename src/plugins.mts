@@ -36,8 +36,13 @@ function pathToFileURL(filePath : string) {
 }
 
 export const loadPlugins = async (options: CompilerOptions) : Promise<Array<Plugin>> => {
-  if (options.settings?.plugins?.length !== undefined) {
-    const pluginPromises : Array<Promise<Plugin>> = options.settings.plugins.map(async (pluginData : string | { name : string, arg : any }) : Promise<Plugin> => {
+  const chainId = options?.settings.compilerOptions?.chain ?? 'default'
+  let pluginSettings : Array<string | { name : string, arg : any }> = []
+  if (options.settings.chains && options.settings.chains[chainId]) {
+    pluginSettings = options.settings?.chains[chainId]?.plugins ?? []
+  }
+  if (pluginSettings.length > 0) {
+    const pluginPromises : Array<Promise<Plugin>> = pluginSettings.map(async (pluginData : string | { name : string, arg : any }) : Promise<Plugin> => {
       let pluginName = ""
       let pluginArg = undefined
       if (typeof pluginData === "string") {
