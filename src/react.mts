@@ -1,5 +1,5 @@
 import { capitalize, copyDirectorySync, getFilenameWithoutExtension, isOnlineUrl, lowerFirstLetter, mkOrCleanDir } from './fsutils.mjs'
-import { CompilerOptions, Plugin, ReactProjectData, ReactTemplateType, Task } from './types.mjs'
+import { CompilerOptions, Plugin, ReactProjectData, Task } from './types.mjs'
 import { copyFileSync, mkdirSync } from 'fs'
 import { readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -16,6 +16,13 @@ interface ImageNode extends Node {
 
 function isImageNode(node: Node): node is ImageNode {
   return node.type === 'image' && typeof (node as ImageNode).url === 'string';
+}
+
+function isLocalFile(importPath : string) {
+  if (importPath.startsWith('./') || importPath.startsWith('/') || importPath.startsWith('../')) {
+    return true
+  }
+  return false;
 }
 
 function extractLocalResourcesSync(filePath: string): string[] {
@@ -37,7 +44,7 @@ function extractLocalResourcesSync(filePath: string): string[] {
   let match;
   while ((match = importRegex.exec(fileContent)) !== null) {
     const importSource = match[3];
-    if (!isOnlineUrl(importSource)) {
+    if (isLocalFile(importSource)) {
       localResources.push(importSource);
     }
   }
