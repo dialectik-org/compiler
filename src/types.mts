@@ -73,19 +73,14 @@ export class CompilerOptions {
     types         : string
   }
   plugins         : Plugin[]
-  reactTemplates  : Array<[ReactTemplateType, string]>
   constructor(wd  : string, compilerdir : string) {
     this.wDir            = wd
     this.settings        = loadSettings(wd)
-    this.templateDir     = join(compilerdir, 'templates')
+    this.templateDir     = join(compilerdir, 'template')
     // compiler dir is .../node_modules/@dialectik/compiler/build
     this.modulesDir      = this.settings.compilerOptions?.moduleDir ?? join(compilerdir, '..', '..', '..')
     this.htmlTemplate    = 'index.html'
     this.reactComponents = 'components.tsx'
-    this.reactTemplates  = [
-      ['Basic', 'basic.tsx'],
-      ['Chakra', 'chakra.tsx'],
-    ]
     this.modules         = {
       babelLoader        : join(this.modulesDir, "babel-loader"),
       tsLoader           : join(this.modulesDir, "ts-loader"),

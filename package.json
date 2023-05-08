@@ -13,7 +13,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf ./build && mkdirp ./build && shx cp -r ./src/templates/ ./build/templates && mkdirp ./build && tsc --skipLibCheck true"
+    "build": "rimraf ./build && mkdirp ./build && shx cp -r ./src/template/ ./build/template && mkdirp ./build && tsc --skipLibCheck true"
   },
   "repository": {
     "type": "git",

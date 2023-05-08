@@ -1,11 +1,11 @@
+import { lowerFirstLetter, mkOrCleanDir } from '../../fsutils.mjs';
 import { ReactProjectData } from '../../types.mjs';
-import { writeFileSync, createWriteStream, readFileSync } from 'fs';
+import archiver from 'archiver';
+import CleanCSS from 'clean-css';
+import { createWriteStream, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import webpack from 'webpack';
 import { Source } from 'webpack-sources'
-import { mkOrCleanDir, lowerFirstLetter } from '../../fsutils.mjs';
-import archiver from 'archiver';
-import CleanCSS from 'clean-css';
 
 class BinarySource implements Source {
   private _buffer: Buffer;

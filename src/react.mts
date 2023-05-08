@@ -133,7 +133,7 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
 
 const copyPluginsComponent = (tmp_project_dir : string, plugins : Array<Plugin>, coptions : CompilerOptions) => {
   plugins.forEach(plugin => {
-    if (plugin.data.withComponents !== undefined) {
+    if (plugin.data.withComponents !== undefined && plugin.data.withComponents) {
       const sourceDir = join(plugin.dir, 'lib', 'react')
       const targetDir = join(tmp_project_dir, basename(plugin.name))
       //console.log(`copy ${sourceDir} to ${targetDir}`)
@@ -166,9 +166,10 @@ function getReactMain(plugins : Array<Plugin>) : string {
 export const create_react_project = (task : Task, plugins: Array<Plugin>, coptions : CompilerOptions) : ReactProjectData => {
   const task_id                  = getId(task)
   const tmp_project_dir          = coptions.settings?.compilerOptions?.tmpDir ? join(coptions.wDir, coptions.settings?.compilerOptions?.tmpDir, task_id) : join(tmpdir(), task_id);
+  console.info("Temporaray dir: ", tmp_project_dir)
   const react_main               = getReactMain(plugins)
   const react_template_path_dest = join(tmp_project_dir, 'main.tsx')
-  const default_react_comps_path = join(coptions.templateDir, coptions.reactComponents)
+  //const default_react_comps_path = join(coptions.templateDir, coptions.reactComponents)
   const react_comps_path_dest    = join(tmp_project_dir, coptions.reactComponents)
   const index_html_path          = join(coptions.templateDir, coptions.htmlTemplate)
   const index_html_path_dest     = join(tmp_project_dir, coptions.htmlTemplate)
@@ -197,13 +198,13 @@ export const create_react_project = (task : Task, plugins: Array<Plugin>, coptio
   copyPluginsComponent(tmp_project_dir, plugins, coptions)
   generateMain(react_main, react_template_path_dest, plugins)
   copyFileSync(index_html_path, index_html_path_dest)
-  if (task.components == 'Default') {
-    copyFileSync(default_react_comps_path, react_comps_path_dest)
-    // copy components css
-    copyDirectorySync(join(coptions.templateDir, 'css'), join(tmp_project_dir, 'css'))
-  } else {
-    throw new Error(`Non default components '${coptions.reactComponents}' not supported yet (task '${task_id}')`)
-  }
+  //if (task.components == 'Default') {
+  //  copyFileSync(default_react_comps_path, react_comps_path_dest)
+  //  // copy components css
+  //  copyDirectorySync(join(coptions.templateDir, 'css'), join(tmp_project_dir, 'css'))
+  //} else {
+  //  throw new Error(`Non default components '${coptions.reactComponents}' not supported yet (task '${task_id}')`)
+  //}
   var styles : string[] = []
   if (!task.externalStyle) {
     task.styles.forEach(style => {
