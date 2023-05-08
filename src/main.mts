@@ -21,7 +21,7 @@ function logStep(title : string, value ?: any) {
   }
 }
 
-const prepare = async (task : Task, wd : string) : Promise<{
+const prepare = async (task : Task, wd : string, dev : boolean) : Promise<{
   coptions : CompilerOptions,
   plugins : Plugin[],
   project : ReactProjectData,
@@ -37,7 +37,7 @@ const prepare = async (task : Task, wd : string) : Promise<{
   logStep('Required plugins:', required_plugins.map(plugin => plugin.name))
   logStep("Creating temporay project...")
   const matterTask = await augmentTask(task, coptions)
-  const project = create_react_project(matterTask, required_plugins, coptions)
+  const project = create_react_project(matterTask, required_plugins, coptions, dev)
   //console.log(project)
   return {
     coptions: coptions,
@@ -47,13 +47,13 @@ const prepare = async (task : Task, wd : string) : Promise<{
 }
 
 export const compile = async (task : Task, wd : string) => {
-  const { coptions,  plugins,  project } = await prepare(task, wd)
+  const { coptions,  plugins,  project } = await prepare(task, wd, false)
   logStep("Compiling project...")
   await exec_webpack(task, project, coptions, plugins)
 }
 
 export const start = async (task : Task, wd : string) => {
-  const { coptions,  plugins,  project } = await prepare(task, wd)
+  const { coptions,  plugins,  project } = await prepare(task, wd, true)
   logStep("Stating dev server...")
   await start_webpack_dev(task, project, coptions, plugins)
 }

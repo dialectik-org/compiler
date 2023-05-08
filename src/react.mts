@@ -106,7 +106,20 @@ const generateComponents = (plugins: Array<Plugin>) : string => {
   return '{ ' + components.join(', \n\t') + ' }'
 }
 
-const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Array<Plugin>) => {
+type Mode = 'dev' | 'html' | 'h5p'
+
+function getMode(task : Task, dev : boolean) : Mode {
+  if (dev) {
+    return 'dev'
+  } else if (task.targetType === 'H5P') {
+    return 'h5p'
+  } else {
+    // for now HTML is mapped to dev
+    return 'dev'
+  }
+}
+
+const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Array<Plugin>, mode : Mode) => {
   // Read the template file
   const template = readFileSync(inputFilePath, 'utf-8');
 
@@ -114,6 +127,7 @@ const generateMain = (inputFilePath: string, outputFilePath: string, plugins: Ar
   const values : { [key:string]: string } = {
     imports: generateImports(plugins),
     getcomponents: generateComponents(plugins),
+    mode: `'${mode}'`
   };
   //console.log(JSON.stringify(values, null, 2))
 
@@ -163,7 +177,7 @@ function getReactMain(plugins : Array<Plugin>) : string {
  * @param coptions compiler options
  * @returns        TmpProject data
  */
-export const create_react_project = (task : Task, plugins: Array<Plugin>, coptions : CompilerOptions) : ReactProjectData => {
+export const create_react_project = (task : Task, plugins: Array<Plugin>, coptions : CompilerOptions, dev : boolean) : ReactProjectData => {
   const task_id                  = getId(task)
   const tmp_project_dir          = coptions.settings?.compilerOptions?.tmpDir ? join(coptions.wDir, coptions.settings?.compilerOptions?.tmpDir, task_id) : join(tmpdir(), task_id);
   console.info("Temporaray dir: ", tmp_project_dir)
@@ -196,7 +210,7 @@ export const create_react_project = (task : Task, plugins: Array<Plugin>, coptio
     throw new Error(`Multi sources not supported (task '${task_id}')`)
   }
   copyPluginsComponent(tmp_project_dir, plugins, coptions)
-  generateMain(react_main, react_template_path_dest, plugins)
+  generateMain(react_main, react_template_path_dest, plugins, getMode(task, dev))
   copyFileSync(index_html_path, index_html_path_dest)
   //if (task.components == 'Default') {
   //  copyFileSync(default_react_comps_path, react_comps_path_dest)

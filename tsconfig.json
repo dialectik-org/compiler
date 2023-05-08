@@ -21,7 +21,7 @@
   },
   "exclude": [
     "build",
-    "src/templates/*.tsx",
+    "src/template/*.tsx",
     "build/templates/*.tsx"
   ]
 }

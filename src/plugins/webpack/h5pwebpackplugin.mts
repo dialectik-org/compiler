@@ -6,6 +6,7 @@ import { createWriteStream, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import webpack from 'webpack';
 import { Source } from 'webpack-sources'
+import { minify } from 'terser'
 
 class BinarySource implements Source {
   private _buffer: Buffer;
@@ -73,10 +74,12 @@ export class H5PWebpackPlugin {
             console.warn('No JavaScript file was found in the compilation assets.');
             return;
           }
-
           // Base64 encode the JS file content
           const fileContent = compilation.assets[generatedJSFile].source();
-          const base64EncodedContent = Buffer.from(fileContent).toString('base64');
+          // Minify the content using Terser
+          const minifiedContent = await minify(fileContent as string);
+
+          const base64EncodedContent = Buffer.from(minifiedContent.code ?? '').toString('base64');
 
           let jsonContent : { script :string, style ?: string }= {
             script: base64EncodedContent

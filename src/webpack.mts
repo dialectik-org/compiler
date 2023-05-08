@@ -17,8 +17,6 @@ import webpack from 'webpack';
 import { Configuration as WebpackConfiguration, WebpackPluginInstance } from 'webpack';
 import webpackDevServer from 'webpack-dev-server'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
-import { writeFileSync } from 'fs'
-
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -233,13 +231,14 @@ function getConfiguration(task : Task, project : ReactProjectData, coptions : Co
     module : getModule(project, coptions, plugins),
     plugins : getPlugins(task, project, coptions, plugins),
     externals: {
-      "react": "React",
-      "react-dom": "ReactDOM",
+      "react": 'React',
+      "react-dom": 'ReactDOM',
       '@chakra-ui/react': 'ChakraUIReact',
       '@emotion/react': 'EmotionReact',
       '@emotion/styled': 'EmotionStyled',
       '@chakra-ui/theme': 'ChakraUITheme',
       '@chakra-ui/styled-system': 'ChakraUIStyledSystem',
+      '@chakra-ui/icons': 'ChakraUIIcons'
     }
   }
 }
